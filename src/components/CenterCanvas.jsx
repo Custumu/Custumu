@@ -252,9 +252,9 @@ export default function CenterCanvas({
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-dark-bg h-[calc(100vh-4rem)] overflow-hidden relative">
+    <main className="flex-1 flex flex-col bg-slate-50 h-[calc(100vh-4rem)] overflow-hidden relative">
       {/* Top Floating Action Toolbar */}
-      <div className="h-12 border-b border-dark-border bg-dark-surface/90 backdrop-blur-md px-4 flex items-center justify-between z-20">
+      <div className="h-12 border-b border-slate-200 bg-white/90 backdrop-blur-md px-4 flex items-center justify-between z-20">
         {/* Tools */}
         <div className="flex items-center space-x-1">
           <button
@@ -262,7 +262,7 @@ export default function CenterCanvas({
             className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
               activeTool === 'select'
                 ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-dark-hover'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Select & Cursor"
           >
@@ -275,7 +275,7 @@ export default function CenterCanvas({
             className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
               activeTool === 'text'
                 ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-dark-hover'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Add Text Overlay"
           >
@@ -288,7 +288,7 @@ export default function CenterCanvas({
             className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
               activeTool === 'draw'
                 ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-dark-hover'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Freehand Pen"
           >
@@ -301,7 +301,7 @@ export default function CenterCanvas({
             className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
               activeTool === 'highlight'
                 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-dark-hover'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Highlighter"
           >
@@ -314,7 +314,7 @@ export default function CenterCanvas({
             className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
               activeTool === 'redact'
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-dark-hover'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Redact / Blackout Box"
           >
@@ -335,7 +335,7 @@ export default function CenterCanvas({
 
           <button
             onClick={() => onAddWatermark('CONFIDENTIAL')}
-            className="p-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-dark-hover flex items-center space-x-1.5 transition"
+            className="p-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-200 hover:bg-slate-100 flex items-center space-x-1.5 transition"
             title="Watermark Document"
           >
             <Lock className="w-3.5 h-3.5" />
@@ -346,11 +346,11 @@ export default function CenterCanvas({
         {/* Zoom & Page Navigation */}
         <div className="flex items-center space-x-2">
           {/* Page controls */}
-          <div className="flex items-center space-x-1 bg-dark-card px-2 py-1 rounded-lg border border-dark-border text-xs text-slate-300">
+          <div className="flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-700">
             <button
               onClick={() => setActivePageIndex(Math.max(0, activePageIndex - 1))}
               disabled={activePageIndex === 0}
-              className="p-0.5 rounded hover:bg-dark-hover disabled:opacity-30"
+              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -360,17 +360,17 @@ export default function CenterCanvas({
             <button
               onClick={() => setActivePageIndex(Math.min(totalPages - 1, activePageIndex + 1))}
               disabled={activePageIndex === totalPages - 1}
-              className="p-0.5 rounded hover:bg-dark-hover disabled:opacity-30"
+              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Zoom controls */}
-          <div className="flex items-center space-x-1 bg-dark-card px-2 py-1 rounded-lg border border-dark-border text-xs text-slate-300">
+          <div className="flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-700">
             <button
               onClick={() => setZoom(Math.max(50, zoom - 15))}
-              className="p-0.5 rounded hover:bg-dark-hover"
+              className="p-0.5 rounded hover:bg-slate-100"
               title="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
@@ -378,7 +378,7 @@ export default function CenterCanvas({
             <span className="text-[11px] w-9 text-center font-mono">{zoom}%</span>
             <button
               onClick={() => setZoom(Math.min(175, zoom + 15))}
-              className="p-0.5 rounded hover:bg-dark-hover"
+              className="p-0.5 rounded hover:bg-slate-100"
               title="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5" />
@@ -388,7 +388,7 @@ export default function CenterCanvas({
       </div>
 
       {/* Main Real PDF Canvas Viewport */}
-      <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-dark-bg/80">
+      <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-slate-50/80">
         <div
           className="relative bg-white shadow-2xl rounded-sm transition-all duration-200 select-none border border-slate-300 flex items-center justify-center overflow-hidden"
           style={{
@@ -399,8 +399,8 @@ export default function CenterCanvas({
         >
           {/* Loading indicator */}
           {isRenderingPage && !canvasRenderSuccess && (
-            <div className="absolute inset-0 bg-dark-bg/60 backdrop-blur-xs flex items-center justify-center z-30">
-              <div className="flex items-center space-x-2 text-brand-400 text-xs font-medium bg-dark-card px-3 py-1.5 rounded-lg border border-dark-border shadow-lg">
+            <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-xs flex items-center justify-center z-30">
+              <div className="flex items-center space-x-2 text-brand-400 text-xs font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-lg">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Rendering Page {activePageIndex + 1}...</span>
               </div>
@@ -470,3 +470,4 @@ export default function CenterCanvas({
     </main>
   );
 }
+

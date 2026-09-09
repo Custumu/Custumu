@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import HeroDropzone from './components/HeroDropzone';
 import LeftPanelPages from './components/LeftPanelPages';
@@ -395,11 +395,11 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-20 right-6 z-50 animate-slide-up">
-          <div className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-dark-surface border border-dark-border text-white text-xs shadow-2xl">
+          <div className="flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-white text-xs shadow-2xl">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{toast.message}</span>
           </div>
@@ -433,12 +433,12 @@ export default function App() {
       ) : (
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Quick Tools Ribbon */}
-          <div className="h-10 bg-dark-card/70 border-b border-dark-border px-4 flex items-center justify-between text-xs">
+          <div className="h-10 bg-white/70 border-b border-slate-200 px-4 flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2">
-              <span className="text-slate-400 text-[11px] font-medium hidden sm:inline">Tools:</span>
+              <span className="text-slate-600 text-[11px] font-medium hidden sm:inline">Tools:</span>
               <button
                 onClick={() => setIsMergeModalOpen(true)}
-                className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
+                className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px]"
               >
                 <Merge className="w-3 h-3 text-indigo-400" />
                 <span>Merge</span>
@@ -446,7 +446,7 @@ export default function App() {
 
               <button
                 onClick={() => setIsSplitModalOpen(true)}
-                className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
+                className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px]"
               >
                 <Split className="w-3 h-3 text-cyan-400" />
                 <span>Split</span>
@@ -454,7 +454,7 @@ export default function App() {
 
               <button
                 onClick={() => setIsCompressModalOpen(true)}
-                className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
+                className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px]"
               >
                 <Minimize2 className="w-3 h-3 text-amber-400" />
                 <span>Compress</span>
@@ -462,7 +462,7 @@ export default function App() {
 
               <button
                 onClick={() => setIsOcrModalOpen(true)}
-                className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
+                className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px]"
               >
                 <ScanText className="w-3 h-3 text-emerald-400" />
                 <span>OCR</span>
@@ -470,7 +470,7 @@ export default function App() {
 
               <button
                 onClick={handleExportWord}
-                className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
+                className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px]"
               >
                 <FileText className="w-3 h-3 text-blue-400" />
                 <span>→ Word</span>
@@ -478,7 +478,7 @@ export default function App() {
 
               <button
                 onClick={() => handleExportExcel()}
-                className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
+                className="px-2.5 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px]"
               >
                 <FileSpreadsheet className="w-3 h-3 text-emerald-400" />
                 <span>→ Excel</span>
@@ -494,7 +494,7 @@ export default function App() {
                 <span>AI Engine Settings</span>
               </button>
               <span className="text-slate-600 hidden md:inline">|</span>
-              <div className="text-[11px] text-slate-400 hidden md:inline">
+              <div className="text-[11px] text-slate-600 hidden md:inline">
                 custumu.com • {isPrivateMode ? '🛡️ Local WASM Engine' : '⚡ Cloud Enclave'}
               </div>
             </div>
@@ -585,3 +585,4 @@ export default function App() {
     </div>
   );
 }
+

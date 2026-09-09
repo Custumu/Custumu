@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { X, Minimize2, CheckCircle2, Zap } from 'lucide-react';
 
 export default function CompressModal({ isOpen, onClose, onApplyCompression, originalSizeBytes }) {
@@ -18,26 +18,26 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-dark-surface border border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400">
               <Minimize2 className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Smart PDF Compression</h3>
-              <p className="text-xs text-slate-400">Client-side WebAssembly compression</p>
+              <h3 className="text-base font-semibold text-slate-900">Smart PDF Compression</h3>
+              <p className="text-xs text-slate-600">Client-side WebAssembly compression</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded text-slate-400 hover:text-white">
+          <button onClick={onClose} className="p-1 rounded text-slate-600 hover:text-slate-900">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Current Size & Reduction Preview */}
         <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="p-3 rounded-xl bg-dark-card border border-dark-border">
-            <div className="text-[11px] text-slate-400 mb-0.5">Original Size</div>
+          <div className="p-3 rounded-xl bg-white border border-slate-200">
+            <div className="text-[11px] text-slate-600 mb-0.5">Original Size</div>
             <div className="text-base font-mono font-bold text-slate-200">{originalMb} MB</div>
           </div>
 
@@ -51,7 +51,7 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
 
         {/* Compression Presets */}
         <div className="space-y-2 mb-6">
-          <label className="text-xs font-medium text-slate-300">Compression Profile</label>
+          <label className="text-xs font-medium text-slate-700">Compression Profile</label>
           <div className="grid grid-cols-3 gap-2">
             {[
               { id: 'high', label: 'Light', desc: 'Best clarity' },
@@ -64,11 +64,11 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
                 className={`p-2.5 rounded-xl border text-left transition ${
                   quality === p.id
                     ? 'bg-amber-500/20 border-amber-500/50 text-white'
-                    : 'bg-dark-card border-dark-border text-slate-400 hover:text-white'
+                    : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900'
                 }`}
               >
                 <div className="text-xs font-semibold">{p.label}</div>
-                <div className="text-[10px] text-slate-400">{p.desc}</div>
+                <div className="text-[10px] text-slate-600">{p.desc}</div>
               </button>
             ))}
           </div>
@@ -77,7 +77,7 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
         {/* Slider */}
         <div className="space-y-2 mb-6">
           <div className="flex justify-between text-xs">
-            <span className="text-slate-400">Target Maximum Size</span>
+            <span className="text-slate-600">Target Maximum Size</span>
             <span className="font-mono text-amber-400 font-semibold">&lt; {targetMb} MB</span>
           </div>
           <input
@@ -103,3 +103,4 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
     </div>
   );
 }
+

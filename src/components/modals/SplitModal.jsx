@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { X, Split, Download, Layers } from 'lucide-react';
 
 export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }) {
@@ -34,18 +34,18 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-dark-surface border border-dark-border rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <div className="p-2 rounded-lg bg-cyan-500/20 text-cyan-400">
               <Split className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-white">Split & Extract Pages</h3>
-              <p className="text-xs text-slate-400">Extract page subsets or burst into individual files</p>
+              <h3 className="text-base font-semibold text-slate-900">Split & Extract Pages</h3>
+              <p className="text-xs text-slate-600">Extract page subsets or burst into individual files</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded text-slate-400 hover:text-white">
+          <button onClick={onClose} className="p-1 rounded text-slate-600 hover:text-slate-900">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -57,11 +57,11 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
               className={`p-3 rounded-xl border text-left transition ${
                 mode === 'all'
                   ? 'bg-cyan-500/20 border-cyan-500/50 text-white'
-                  : 'bg-dark-card border-dark-border text-slate-400 hover:text-white'
+                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900'
               }`}
             >
               <div className="text-xs font-semibold">Extract Every Page</div>
-              <div className="text-[10px] text-slate-400">Split into {totalPages} individual files</div>
+              <div className="text-[10px] text-slate-600">Split into {totalPages} individual files</div>
             </button>
 
             <button
@@ -69,23 +69,23 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
               className={`p-3 rounded-xl border text-left transition ${
                 mode === 'range'
                   ? 'bg-cyan-500/20 border-cyan-500/50 text-white'
-                  : 'bg-dark-card border-dark-border text-slate-400 hover:text-white'
+                  : 'bg-white border-slate-200 text-slate-600 hover:text-slate-900'
               }`}
             >
               <div className="text-xs font-semibold">Custom Range</div>
-              <div className="text-[10px] text-slate-400">Extract specific page interval</div>
+              <div className="text-[10px] text-slate-600">Extract specific page interval</div>
             </button>
           </div>
 
           {mode === 'range' && (
-            <div className="p-3 bg-dark-card rounded-xl border border-dark-border space-y-2">
-              <label className="text-xs text-slate-300">Page Range (e.g. 1-2):</label>
+            <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-2">
+              <label className="text-xs text-slate-700">Page Range (e.g. 1-2):</label>
               <input
                 type="text"
                 value={rangeInput}
                 onChange={(e) => setRangeInput(e.target.value)}
                 placeholder="1-2"
-                className="w-full px-3 py-1.5 rounded-lg bg-dark-surface border border-dark-border text-xs text-white outline-none focus:border-cyan-500 font-mono"
+                className="w-full px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs text-white outline-none focus:border-cyan-500 font-mono"
               />
               <p className="text-[10px] text-slate-500">Document has {totalPages} pages total.</p>
             </div>
@@ -103,3 +103,4 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
     </div>
   );
 }
+

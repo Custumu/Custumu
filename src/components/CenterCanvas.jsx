@@ -1,21 +1,7 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { 
-  MousePointer, 
-  Type, 
-  PenTool, 
-  Highlighter, 
-  Square, 
-  Stamp, 
-  ZoomIn, 
-  ZoomOut, 
-  ChevronLeft,
-  ChevronRight,
-  Lock,
-  Loader2,
-  Maximize2,
-  Minimize2
-} from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { loadPdfDoc, renderPdfPage, renderPdfTextLayer } from '../services/pdfRenderer';
+import CanvasToolbar from './CanvasToolbar';
 
 export default function CenterCanvas({
   docBuffer,
@@ -396,76 +382,6 @@ export default function CenterCanvas({
     }
   };
 
-  const actionGroups = useMemo(() => [
-    {
-      id: 'drawing-tools',
-      items: [
-        {
-          id: 'select',
-          label: 'Select',
-          icon: MousePointer,
-          title: 'Select & Cursor',
-          isTool: true,
-          activeClass: 'bg-brand-50 text-brand-600 border-brand-200 shadow-2xs',
-        },
-        {
-          id: 'text',
-          label: 'Text',
-          icon: Type,
-          title: 'Add Text Overlay',
-          isTool: true,
-          activeClass: 'bg-brand-50 text-brand-600 border-brand-200 shadow-2xs',
-        },
-        {
-          id: 'draw',
-          label: 'Pen',
-          icon: PenTool,
-          title: 'Freehand Pen',
-          isTool: true,
-          activeClass: 'bg-brand-50 text-brand-600 border-brand-200 shadow-2xs',
-        },
-        {
-          id: 'highlight',
-          label: 'Highlight',
-          icon: Highlighter,
-          title: 'Highlighter',
-          isTool: true,
-          activeClass: 'bg-amber-50 text-amber-600 border-amber-200 shadow-2xs',
-        },
-        {
-          id: 'redact',
-          label: 'Redact',
-          icon: Square,
-          title: 'Redact / Blackout Box',
-          isTool: true,
-          activeClass: 'bg-rose-50 text-rose-600 border-rose-200 shadow-2xs',
-        },
-      ],
-    },
-    {
-      id: 'document-actions',
-      items: [
-        {
-          id: 'sign',
-          label: 'Sign',
-          icon: Stamp,
-          title: 'e-Signature Pad',
-          onClick: onOpenSignatureModal,
-          className: 'text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100/80 border-emerald-200 shadow-2xs',
-        },
-        {
-          id: 'watermark',
-          label: 'Watermark',
-          icon: Lock,
-          title: 'Watermark Document',
-          onClick: () => onAddWatermark('CONFIDENTIAL'),
-          className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
-          hideOnSmall: true,
-        },
-      ],
-    },
-  ], [onOpenSignatureModal, onAddWatermark]);
-
   const getToolCursor = () => {
     if (activeTool === 'select') return 'default';
     if (activeTool === 'text') return 'text';
@@ -476,123 +392,16 @@ export default function CenterCanvas({
   return (
     <main className="flex-1 flex flex-col bg-slate-100/70 h-full overflow-hidden relative min-w-0">
       {/* Top Floating Action Toolbar */}
-      <div className="h-11 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0 shadow-xs">
-        {/* Left: Interactive Tools & Actions */}
-        <div className="flex items-center space-x-1">
-          {actionGroups.map((group, groupIdx) => (
-            <React.Fragment key={group.id}>
-              {groupIdx > 0 && <div className="h-4 w-px bg-slate-200 mx-1.5" />}
-              <div className="flex items-center space-x-1">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTool === item.id;
-
-                  if (item.isTool) {
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => setActiveTool(item.id)}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer border ${
-                          isActive
-                            ? item.activeClass
-                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                        }`}
-                        title={item.title}
-                      >
-                        <Icon className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">{item.label}</span>
-                      </button>
-                    );
-                  }
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={item.onClick}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer border ${item.className}`}
-                      title={item.title}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      <span className={item.hideOnSmall ? 'hidden md:inline' : ''}>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </React.Fragment>
-          ))}
-        </div>
-
-        {/* Right: Page Navigation & Zoom Controls */}
-        <div className="flex items-center space-x-2">
-          {/* Page controls */}
-          {/* <div className="flex items-center space-x-1 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">
-            <button
-              onClick={() => setActivePageIndex(Math.max(0, activePageIndex - 1))}
-              disabled={activePageIndex === 0}
-              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
-              title="Previous Page"
-            >
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </button>
-            <span className="px-1 text-[11px] font-medium text-slate-700">
-              {activePageIndex + 1} / {totalPages}
-            </span>
-            <button
-              onClick={() => setActivePageIndex(Math.min(totalPages - 1, activePageIndex + 1))}
-              disabled={activePageIndex === totalPages - 1}
-              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
-              title="Next Page"
-            >
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div> */}
-
-          {/* Zoom controls */}
-          <div className="flex items-center space-x-1 bg-white px-1.5 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">
-            <button
-              onClick={() => setZoom(Math.max(40, zoom - 15))}
-              className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={() => setZoom(100)}
-              className="text-[11px] w-10 text-center font-mono hover:text-brand-600 font-medium cursor-pointer"
-              title="Click to reset to 100%"
-            >
-              {zoom}%
-            </button>
-            <button
-              onClick={() => setZoom(Math.min(200, zoom + 15))}
-              className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Fit Width / Fit Page buttons */}
-          <div className="flex items-center space-x-0.5 bg-white p-0.5 rounded-lg border border-slate-200 text-slate-600 shadow-2xs">
-            <button
-              onClick={handleFitWidth}
-              className="px-1.5 py-0.5 rounded text-[11px] font-medium hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1 cursor-pointer"
-              title="Fit to Width"
-            >
-              <Maximize2 className="w-3 h-3 text-slate-500" />
-              <span className="hidden xl:inline">Fit Width</span>
-            </button>
-            <button
-              onClick={handleFitPage}
-              className="px-1.5 py-0.5 rounded text-[11px] font-medium hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1 cursor-pointer"
-              title="Fit to Page"
-            >
-              <Minimize2 className="w-3 h-3 text-slate-500" />
-              <span className="hidden xl:inline">Fit Page</span>
-            </button>
-          </div>
-        </div>
-      </div>
+      <CanvasToolbar
+        activeTool={activeTool}
+        setActiveTool={setActiveTool}
+        onOpenSignatureModal={onOpenSignatureModal}
+        onAddWatermark={onAddWatermark}
+        zoom={zoom}
+        setZoom={setZoom}
+        onFitWidth={handleFitWidth}
+        onFitPage={handleFitPage}
+      />
 
       {/* Main Real PDF Canvas Viewport */}
       <div 

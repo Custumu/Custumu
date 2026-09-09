@@ -41,14 +41,11 @@ export default function Navbar({
             </div>
           </div>
 
-          <div className="h-5 w-px bg-dark-border mx-1 hidden md:block"></div>
 
           {/* Active File Pill */}
-          <div className="hidden md:flex items-center space-x-2 bg-white/80 border border-slate-200 px-3 py-1.5 rounded-full text-xs text-slate-700">
+          <div className="hidden md:flex items-center space-x-2 text-xs text-slate-700">
             <FileText className="w-3.5 h-3.5 text-brand-400" />
             <span className="font-medium truncate max-w-[200px]">{documentName || 'Document.pdf'}</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-slate-600">{pageCount} {pageCount === 1 ? 'Page' : 'Pages'}</span>
           </div>
         </div>
 
@@ -113,7 +110,7 @@ export default function Navbar({
           <div className="relative">
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center space-x-2 bg-gradient-to-r from-brand-500 to-cyan-500 hover:from-brand-600 hover:to-cyan-600 text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg shadow-md hover:shadow-brand-500/25 transition"
+              className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg"
             >
               <Download className="w-4 h-4" />
               <span>Export</span>

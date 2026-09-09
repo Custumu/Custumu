@@ -590,7 +590,7 @@ export default function CenterCanvas({
       >
         <div className="my-auto py-2 flex flex-col items-center">
           <div
-            className="relative bg-white shadow-2xl rounded-sm select-none border border-slate-300"
+            className="relative bg-white shadow-2xl rounded-sm select-none"
             style={{
               width: `${canvasDimensions.width}px`,
               height: `${canvasDimensions.height}px`,

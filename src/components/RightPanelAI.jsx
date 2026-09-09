@@ -47,13 +47,15 @@ export default function RightPanelAI({
   const [prompts, setPrompts] = useState([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
 
-  // Option 2 & Option 1 generator
+  const hasDocText = Boolean(documentContext?.fullText && documentContext.fullText.trim().length >= 20);
+
+  // Option 2 & Option 1 generator (only if document has text)
   const handleGeneratePrompts = useCallback(async () => {
-    if (isLoadingPrompts) return;
+    if (!hasDocText || isLoadingPrompts) return;
     setIsLoadingPrompts(true);
     try {
       const results = await fetchSuggestedPrompts(
-        documentContext?.fullText || '',
+        documentContext.fullText,
         documentMetadata?.pageCount || 1
       );
       setPrompts(results);
@@ -62,14 +64,14 @@ export default function RightPanelAI({
     } finally {
       setIsLoadingPrompts(false);
     }
-  }, [documentContext?.fullText, documentMetadata?.pageCount, isLoadingPrompts]);
+  }, [documentContext?.fullText, documentMetadata?.pageCount, isLoadingPrompts, hasDocText]);
 
-  // Option 1: Automatically suggest prompts on document load (if AUTO_SUGGEST_ON_LOAD is true)
+  // Option 1: Automatically suggest prompts on document load only if document has real text
   useEffect(() => {
-    if (AUTO_SUGGEST_ON_LOAD && documentContext?.fullText) {
+    if (AUTO_SUGGEST_ON_LOAD && hasDocText) {
       handleGeneratePrompts();
     }
-  }, [documentContext?.fullText]);
+  }, [hasDocText]);
 
   const messagesEndRef = useRef(null);
 
@@ -207,41 +209,43 @@ export default function RightPanelAI({
         </div>
       </div>
 
-      {/* Quick Prompt Chips (Option 1 & Option 2) */}
-      <div className="px-3 py-2 border-b border-slate-200/60 bg-white/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
-        {/* Option 2: On-Demand Suggest / Refresh Button */}
-        <button
-          onClick={handleGeneratePrompts}
-          disabled={isLoadingPrompts || isStreaming}
-          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 hover:border-brand-400 hover:bg-brand-100 text-brand-700 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50"
-          title="Analyze document with AI and generate smart prompt suggestions"
-        >
-          {isLoadingPrompts ? (
-            <>
-              <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
-              <span>Analyzing document...</span>
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-3 h-3 text-brand-600" />
-              <span>{prompts.length > 0 ? 'Refresh Prompts' : 'Suggest Prompts'}</span>
-            </>
-          )}
-        </button>
-
-        {/* Dynamic Prompts List (Only real AI suggestions, zero fallbacks) */}
-        {prompts.map((qp, i) => (
+      {/* Quick Prompt Chips (Option 1 & Option 2) - Only show if PDF contains real text */}
+      {hasDocText && (
+        <div className="px-3 py-2 border-b border-slate-200/60 bg-white/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
+          {/* Option 2: On-Demand Suggest / Refresh Button */}
           <button
-            key={i}
-            onClick={() => handleSend(qp.prompt)}
-            disabled={isStreaming}
-            title={qp.prompt}
-            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-600 text-slate-700 transition text-[11px] disabled:opacity-40 shrink-0"
+            onClick={handleGeneratePrompts}
+            disabled={isLoadingPrompts || isStreaming}
+            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 hover:border-brand-400 hover:bg-brand-100 text-brand-700 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+            title="Analyze document with AI and generate smart prompt suggestions"
           >
-            {qp.label}
+            {isLoadingPrompts ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
+                <span>Analyzing document...</span>
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-3 h-3 text-brand-600" />
+                <span>{prompts.length > 0 ? 'Refresh Prompts' : 'Suggest Prompts'}</span>
+              </>
+            )}
           </button>
-        ))}
-      </div>
+
+          {/* Dynamic Prompts List (Only real AI suggestions, zero fallbacks) */}
+          {prompts.map((qp, i) => (
+            <button
+              key={i}
+              onClick={() => handleSend(qp.prompt)}
+              disabled={isStreaming}
+              title={qp.prompt}
+              className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-600 text-slate-700 transition text-[11px] disabled:opacity-40 shrink-0"
+            >
+              {qp.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Messages Stream */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">

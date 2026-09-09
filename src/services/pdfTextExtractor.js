@@ -1,36 +1,76 @@
-/**
- * Custumu Native PDF Text Extractor
- * Pure client-side text layer extractor for document RAG.
- * Zero-dependency, ultra-fast stream decoder that works across all browsers.
- */
+import { loadPdfDoc } from './pdfRenderer';
 
+/**
+ * Custumu PDF Text Extractor
+ * Extracts real text layers from any PDF (handles FlateDecode compression, encodings, and layouts).
+ */
 export async function extractPdfTextLayers(arrayBuffer) {
+  if (!arrayBuffer) {
+    return { numPages: 1, pages: [], fullText: '' };
+  }
+
+  // 1. Primary: Use PDF.js getTextContent() for full decoding of compressed streams & font encodings
+  try {
+    const pdfDoc = await loadPdfDoc(arrayBuffer);
+    if (pdfDoc && pdfDoc.numPages > 0) {
+      const pages = [];
+      const numPages = pdfDoc.numPages;
+
+      for (let i = 1; i <= numPages; i++) {
+        try {
+          const page = await pdfDoc.getPage(i);
+          const textContent = await page.getTextContent();
+          const pageText = textContent.items
+            .map((item) => item.str)
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+
+          pages.push({
+            pageNumber: i,
+            text: pageText,
+            wordCount: pageText ? pageText.split(/\s+/).length : 0,
+          });
+        } catch (pageErr) {
+          console.warn(`Error extracting text from page ${i}:`, pageErr);
+          pages.push({ pageNumber: i, text: '', wordCount: 0 });
+        }
+      }
+
+      const fullText = pages
+        .filter((p) => p.text.length > 0)
+        .map((p) => `--- [PAGE ${p.pageNumber}] ---\n${p.text}`)
+        .join('\n\n');
+
+      return {
+        numPages,
+        pages,
+        fullText,
+      };
+    }
+  } catch (pdfJsErr) {
+    console.warn('PDF.js text extraction error, trying stream scanner:', pdfJsErr);
+  }
+
+  // 2. Secondary: Raw stream scanner if PDF.js is unavailable
   try {
     const bytes = new Uint8Array(arrayBuffer);
     const decoder = new TextDecoder('latin1');
     const rawPdf = decoder.decode(bytes);
 
-    // Split raw PDF into objects or stream chunks
-    const pages = [];
-    let pageCount = 0;
-
-    // Count pages via /Type /Page
     const pageMatches = rawPdf.match(/\/Type\s*\/Page\b/g);
-    pageCount = pageMatches ? pageMatches.length : 1;
+    const pageCount = pageMatches ? pageMatches.length : 1;
 
-    // Extract text between BT (Begin Text) and ET (End Text) blocks
     const btEtRegex = /BT([\s\S]*?)ET/g;
     let match;
     const extractedBlocks = [];
 
     while ((match = btEtRegex.exec(rawPdf)) !== null) {
       const block = match[1];
-      // Match text strings in (text) Tj or [(text)] TJ
       const textMatches = block.match(/\((.*?)\)\s*(?:Tj|'|")/g) || [];
       const lineText = textMatches
-        .map(m => {
+        .map((m) => {
           const str = m.replace(/^[^(]*\(/, '').replace(/\)[^)]*$/, '');
-          // Unescape standard PDF octals and slashes
           return str
             .replace(/\\n/g, '\n')
             .replace(/\\r/g, '')
@@ -39,7 +79,7 @@ export async function extractPdfTextLayers(arrayBuffer) {
             .replace(/\\\)/g, ')')
             .replace(/\\\\/g, '\\');
         })
-        .filter(s => s.trim().length > 0)
+        .filter((s) => s.trim().length > 0)
         .join(' ');
 
       if (lineText.trim()) {
@@ -47,10 +87,10 @@ export async function extractPdfTextLayers(arrayBuffer) {
       }
     }
 
-    // If blocks were successfully parsed from streams
     if (extractedBlocks.length > 0) {
       const totalBlocks = extractedBlocks.length;
       const blocksPerPage = Math.ceil(totalBlocks / Math.max(1, pageCount));
+      const pages = [];
 
       for (let i = 0; i < pageCount; i++) {
         const pageBlocks = extractedBlocks.slice(i * blocksPerPage, (i + 1) * blocksPerPage);
@@ -62,12 +102,8 @@ export async function extractPdfTextLayers(arrayBuffer) {
         });
       }
 
-      const fullText = pages.map(p => `--- [PAGE ${p.pageNumber}] ---\n${p.text}`).join('\n\n');
-      return {
-        numPages: pageCount,
-        pages,
-        fullText,
-      };
+      const fullText = pages.map((p) => `--- [PAGE ${p.pageNumber}] ---\n${p.text}`).join('\n\n');
+      return { numPages: pageCount, pages, fullText };
     }
   } catch (err) {
     console.warn('Native PDF text parsing exception', err);

@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import aiRouter from './routes/ai.js';
@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Custumu-Key'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Custumu-Key', 'x-api-key'],
 }));
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ extended: true, limit: '100mb' }));
@@ -42,3 +42,4 @@ app.use('/api/jobs', jobsRouter);
 app.listen(PORT, () => {
   console.log(`[Custumu API] Server listening on http://localhost:${PORT}`);
 });
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Custumu Enterprise AI Engine (Client-Side)
  * Connects directly to the real /api/ai/chat streaming backend or executes direct client BYOK streaming.
  * Zero hardcoded replies. Pure real LLM streaming with RAG context and tool execution.
@@ -67,7 +67,8 @@ async function streamViaServerApi(prompt, conversationHistory, documentContext, 
     headers['x-api-key'] = config.apiKey;
   }
 
-  const response = await fetch('/api/ai/chat', {
+  const endpoint = (typeof window !== 'undefined' && window.location.hostname === 'localhost') ? 'http://localhost:5000/api/ai/chat' : '/api/ai/chat';
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers,
     body: JSON.stringify({
@@ -122,9 +123,10 @@ async function streamViaServerApi(prompt, conversationHistory, documentContext, 
         try {
           const payload = JSON.parse(dataStr);
 
-          if (payload.token) {
-            accumulatedText += payload.token;
-            onToken(payload.token);
+          const token = payload.token || payload.choices?.[0]?.delta?.content || '';
+          if (token) {
+            accumulatedText += token;
+            onToken(token);
           }
 
           if (payload.tool_call) {
@@ -230,3 +232,4 @@ function mapToolCallToAction(toolName, args) {
   }
   return null;
 }
+

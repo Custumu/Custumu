@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 
 const router = express.Router();
 
@@ -18,7 +18,7 @@ router.post('/chat', async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
 
-  const apiKey = process.env.OPENAI_API_KEY;
+  const apiKey = req.headers['x-api-key'] || process.env.OPENAI_API_KEY;
 
   if (apiKey) {
     try {
@@ -72,3 +72,4 @@ router.post('/chat', async (req, res) => {
 });
 
 export default router;
+

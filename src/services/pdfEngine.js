@@ -1,4 +1,4 @@
-﻿import { loadPdfDoc } from './pdfRenderer';
+import { loadPdfDoc } from './pdfRenderer';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import * as XLSX from 'xlsx';
 
@@ -473,8 +473,8 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
       pageAnnotations.forEach(anno => {
         if (anno.type === 'draw' || anno.type === 'highlight') {
           ctx.beginPath();
-          ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : (anno.color || '#2563EB');
-          ctx.lineWidth = (anno.type === 'highlight' ? 16 : (anno.width || 3)) * (ratio || 1);
+          ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(250, 204, 21, 0.45)' : (anno.color || '#0284C7');
+          ctx.lineWidth = (anno.type === 'highlight' ? 18 : (anno.width || 3)) * (ratio || 1);
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
 

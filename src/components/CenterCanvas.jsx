@@ -117,8 +117,37 @@ export default function CenterCanvas({
     };
   }, [docBuffer, activePageIndex, zoom]);
 
-  // 2. Render Annotations onto annotationCanvasRef
-  useEffect(() => {
+  const HIGHLIGHT_COLOR = 'rgba(250, 204, 21, 0.45)';
+  const PEN_COLOR = '#0284C7';
+
+  // Helper to draw a single continuous stroke path with consistent styling
+  const drawPath = (ctx, type, points, scaleX, scaleY, color, width) => {
+    if (!points || points.length === 0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = type === 'highlight' ? HIGHLIGHT_COLOR : (color || PEN_COLOR);
+    ctx.lineWidth = (type === 'highlight' ? 18 : (width || 3)) * scaleX;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (points.length === 1) {
+      ctx.arc(points[0].x * scaleX, points[0].y * scaleY, ctx.lineWidth / 2, 0, Math.PI * 2);
+      ctx.fillStyle = ctx.strokeStyle;
+      ctx.fill();
+    } else {
+      points.forEach((pt, idx) => {
+        const px = pt.x * scaleX;
+        const py = pt.y * scaleY;
+        if (idx === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.stroke();
+    }
+    ctx.restore();
+  };
+
+  // 2. Render Annotations onto annotationCanvasRef (unified for live drawing & saved annotations)
+  const renderAnnotations = (activeLivePath = null, activeLiveType = null, liveRedactRect = null) => {
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -131,21 +160,10 @@ export default function CenterCanvas({
 
     const pageAnnotations = annotations.filter((a) => a.pageIndex === activePageIndex);
 
+    // 1. Render all committed annotations
     pageAnnotations.forEach((anno) => {
       if (anno.type === 'draw' || anno.type === 'highlight') {
-        ctx.beginPath();
-        ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : (anno.color || '#0284C7');
-        ctx.lineWidth = (anno.type === 'highlight' ? 16 : (anno.width || 3)) * scaleX;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        anno.points.forEach((pt, idx) => {
-          const px = pt.x * scaleX;
-          const py = pt.y * scaleY;
-          if (idx === 0) ctx.moveTo(px, py);
-          else ctx.lineTo(px, py);
-        });
-        ctx.stroke();
+        drawPath(ctx, anno.type, anno.points, scaleX, scaleY, anno.color, anno.width);
       } else if (anno.type === 'redact') {
         ctx.fillStyle = '#000000';
         ctx.fillRect(anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
@@ -163,6 +181,26 @@ export default function CenterCanvas({
         if (img.complete) drawSig();
       }
     });
+
+    // 2. Render active live drawing/highlight stroke using exact same continuous path
+    if (activeLivePath && activeLivePath.length > 0 && activeLiveType) {
+      drawPath(ctx, activeLiveType, activeLivePath, scaleX, scaleY);
+    }
+
+    // 3. Render active live redaction box
+    if (liveRedactRect) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+      ctx.fillRect(
+        liveRedactRect.x * scaleX,
+        liveRedactRect.y * scaleY,
+        liveRedactRect.width * scaleX,
+        liveRedactRect.height * scaleY
+      );
+    }
+  };
+
+  useEffect(() => {
+    renderAnnotations();
   }, [activePageIndex, annotations, canvasDimensions]);
 
   const handleMouseDown = (e) => {
@@ -176,7 +214,9 @@ export default function CenterCanvas({
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       setIsDrawing(true);
-      setCurrentPath([{ x, y }]);
+      const initialPath = [{ x, y }];
+      setCurrentPath(initialPath);
+      renderAnnotations(initialPath, activeTool);
     } else if (activeTool === 'redact') {
       setIsDrawing(true);
       setStartPos({ x, y });
@@ -196,21 +236,15 @@ export default function CenterCanvas({
     const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
-      setCurrentPath((prev) => [...prev, { x, y }]);
-
-      const ctx = canvas.getContext('2d');
-      const scaleX = canvas.width / baseWidth;
-      const scaleY = canvas.height / baseHeight;
-      ctx.beginPath();
-      ctx.strokeStyle = activeTool === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : '#0284C7';
-      ctx.lineWidth = (activeTool === 'highlight' ? 16 : 3) * scaleX;
-      ctx.lineCap = 'round';
-      const last = currentPath[currentPath.length - 1];
-      if (last) {
-        ctx.moveTo(last.x * scaleX, last.y * scaleY);
-        ctx.lineTo(x * scaleX, y * scaleY);
-        ctx.stroke();
-      }
+      const nextPath = [...currentPath, { x, y }];
+      setCurrentPath(nextPath);
+      renderAnnotations(nextPath, activeTool);
+    } else if (activeTool === 'redact') {
+      const width = Math.abs(x - startPos.x);
+      const height = Math.abs(y - startPos.y);
+      const startX = Math.min(x, startPos.x);
+      const startY = Math.min(y, startPos.y);
+      renderAnnotations(null, null, { x: startX, y: startY, width, height });
     }
   };
 
@@ -226,13 +260,14 @@ export default function CenterCanvas({
     const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
-      if (currentPath.length > 1) {
+      const finalPath = currentPath.length > 0 ? currentPath : [{ x, y }];
+      if (finalPath.length > 0) {
         setAnnotations((prev) => [
           ...prev,
           {
             pageIndex: activePageIndex,
             type: activeTool,
-            points: currentPath,
+            points: finalPath,
           },
         ]);
       }
@@ -256,6 +291,7 @@ export default function CenterCanvas({
           },
         ]);
       }
+      renderAnnotations();
     }
   };
 

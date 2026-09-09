@@ -50,31 +50,16 @@ npm start
 
 ---
 
-## 🔑 How to Configure Real AI API Keys
+## 🔑 OpenAI Enterprise Configuration
 
-Custumu connects to real LLMs (**OpenAI**, **Google Gemini**, and **Anthropic Claude**) with real vector document RAG and autonomous function calling.
+Custumu Enterprise Copilot is powered by the server-configured OpenAI API.
 
-You can set up your API key in either of two ways:
-
-### Option A: In the Web App (Easiest / 100% Private BYOK)
-1. Open [http://localhost:3000](http://localhost:3000).
-2. Click **AI Engine Settings** (or the ⚙️ gear icon in the top right of the AI panel).
-3. Choose your provider (**OpenAI**, **Google Gemini**, or **Anthropic**).
-4. Paste your API key and click **Apply Engine Settings**.
-5. *Keys are stored strictly in your browser's local storage and make direct zero-knowledge API calls.*
-
-### Option B: In the Backend `.env` File
-1. Open `server/.env` in your editor.
-2. Add one or more keys:
-   ```env
-   PORT=5000
-   OPENAI_API_KEY=sk-proj-...
-   # or
-   GEMINI_API_KEY=AIzaSy...
-   # or
-   ANTHROPIC_API_KEY=sk-ant-...
-   ```
-3. Restart the backend server (`npm start` in `server/`).
+Configure your API key in `server/.env`:
+```env
+PORT=5000
+OPENAI_API_KEY=sk-...
+```
+All users automatically route through this backend AI engine with zero setup required on the client.
 
 ---
 
@@ -90,7 +75,6 @@ Custumu/
 │   │   ├── CenterCanvas.jsx      # Interactive PDF canvas, drawing, text, redaction, signatures
 │   │   ├── RightPanelAI.jsx      # Real streaming AI copilot, clickable citations, tool execution cards
 │   │   └── modals/
-│   │       ├── ApiKeyModal.jsx   # AI model & API key configuration modal
 │   │       ├── SignatureModal.jsx# Canvas e-signature pad
 │   │       ├── CompressModal.jsx # Target file-size slider & optimizer
 │   │       ├── SplitModal.jsx    # Page range extraction & bursting

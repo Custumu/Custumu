@@ -10,7 +10,6 @@ import CompressModal from './components/modals/CompressModal';
 import SplitModal from './components/modals/SplitModal';
 import MergeModal from './components/modals/MergeModal';
 import OCRModal from './components/modals/OCRModal';
-import ApiKeyModal from './components/modals/ApiKeyModal';
 import PngModal from './components/modals/PngModal';
 
 import {
@@ -68,7 +67,6 @@ export default function App() {
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
-  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
   const [isPngModalOpen, setIsPngModalOpen] = useState(false);
 
   // Toast Notification
@@ -520,13 +518,10 @@ export default function App() {
             </div>
 
             <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setIsApiKeyModalOpen(true)}
-                className="flex items-center space-x-1 text-[11px] text-brand-600 hover:text-brand-700 font-medium transition cursor-pointer"
-              >
+              <div className="flex items-center space-x-1.5 text-[11px] text-slate-700 font-medium">
                 <Sparkles className="w-3 h-3 text-brand-500" />
-                <span>AI Engine Settings</span>
-              </button>
+                <span>AI Engine Connected</span>
+              </div>
               <span className="text-slate-300 hidden md:inline">|</span>
               <div className="text-[11px] text-slate-500 hidden md:inline">
                 custumu.com • {isPrivateMode ? '🛡️ Local WASM Engine' : '⚡ Cloud Enclave'}
@@ -571,7 +566,6 @@ export default function App() {
               onExportWord={handleExportWord}
               onJumpToPage={(targetIdx) => setActivePageIndex(targetIdx)}
               initialPrompt={initialPrompt}
-              onOpenSettings={() => setIsApiKeyModalOpen(true)}
             />
           </div>
         </div>
@@ -610,11 +604,6 @@ export default function App() {
         isOpen={isOcrModalOpen}
         onClose={() => setIsOcrModalOpen(false)}
         activePageIndex={activePageIndex}
-      />
-
-            <ApiKeyModal
-        isOpen={isApiKeyModalOpen}
-        onClose={() => setIsApiKeyModalOpen(false)}
       />
 
       <PngModal

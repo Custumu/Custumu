@@ -9,7 +9,6 @@ import {
   Minimize2, 
   FileText, 
   ShieldCheck, 
-  Settings,
   ExternalLink,
   ChevronRight,
   Stamp,
@@ -25,8 +24,7 @@ export default function RightPanelAI({
   onExportExcel,
   onExportWord,
   onJumpToPage,
-  initialPrompt,
-  onOpenSettings
+  initialPrompt
 }) {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -181,18 +179,10 @@ export default function RightPanelAI({
             </div>
             <div className="text-[10px] text-slate-600 flex items-center gap-1">
               <span>Model:</span>
-              <span className="font-mono text-brand-400">{aiConfig.model || 'gpt-4o-mini'}</span>
+              <span className="font-mono text-brand-600 font-medium">{aiConfig.model || 'gpt-4o-mini'}</span>
             </div>
           </div>
         </div>
-
-        <button
-          onClick={onOpenSettings}
-          className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition"
-          title="Configure AI Models & API Key"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
       </div>
 
       {/* Quick Prompt Chips */}
@@ -361,12 +351,7 @@ export default function RightPanelAI({
 
         <div className="flex justify-between items-center text-[10px] text-slate-500 mt-2 px-1">
           <span>Grounded in active PDF text</span>
-          <button
-            onClick={onOpenSettings}
-            className="hover:text-brand-400 underline underline-offset-2 transition"
-          >
-            Change AI Model
-          </button>
+          <span className="text-slate-500">OpenAI Enterprise</span>
         </div>
       </div>
     </aside>

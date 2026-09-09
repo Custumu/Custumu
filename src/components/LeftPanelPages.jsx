@@ -3,6 +3,7 @@ import { Trash2, RotateCw, Copy, ArrowUp, ArrowDown, Plus, Layers, Split } from 
 
 export default function LeftPanelPages({
   pages,
+  thumbnails = [],
   activePageIndex,
   setActivePageIndex,
   onRotatePage,
@@ -42,10 +43,12 @@ export default function LeftPanelPages({
         </div>
       </div>
 
-      {/* Pages Thumbnails List */}
+      {/* Real Page Thumbnails List */}
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {pages.map((page, idx) => {
           const isActive = idx === activePageIndex;
+          const thumbUrl = thumbnails[idx];
+
           return (
             <div
               key={idx}
@@ -56,42 +59,22 @@ export default function LeftPanelPages({
                   : 'bg-dark-card/50 border-dark-border hover:border-slate-600 hover:bg-dark-card'
               }`}
             >
-              {/* Thumbnail Container */}
-              <div className="w-full aspect-[8.5/11] bg-white rounded-lg shadow-sm overflow-hidden flex flex-col items-center justify-center relative border border-slate-300">
-                {/* Simulated Document Preview Lines */}
-                <div className="w-full h-full p-2.5 flex flex-col justify-between select-none">
-                  <div className="space-y-1.5 w-full">
-                    <div className="h-2 w-3/4 bg-slate-800 rounded"></div>
-                    <div className="h-1.5 w-full bg-slate-300 rounded"></div>
-                    <div className="h-1.5 w-5/6 bg-slate-300 rounded"></div>
-                    <div className="h-1.5 w-4/6 bg-slate-200 rounded"></div>
+              {/* Real Thumbnail Preview */}
+              <div className="w-full aspect-[8.5/11] bg-white rounded-lg shadow-sm overflow-hidden flex items-center justify-center relative border border-slate-300">
+                {thumbUrl ? (
+                  <img
+                    src={thumbUrl}
+                    alt={`Page ${idx + 1}`}
+                    className="w-full h-full object-contain pointer-events-none select-none"
+                  />
+                ) : (
+                  <div className="text-slate-400 text-[10px] flex flex-col items-center">
+                    <span>Page {idx + 1}</span>
                   </div>
-
-                  {idx === 0 && (
-                    <div className="w-full border border-slate-300 rounded p-1 bg-slate-50 space-y-1">
-                      <div className="h-1 w-full bg-brand-300 rounded"></div>
-                      <div className="h-1 w-4/5 bg-slate-200 rounded"></div>
-                      <div className="h-1 w-2/3 bg-slate-200 rounded"></div>
-                    </div>
-                  )}
-
-                  {idx === 2 && (
-                    <div className="flex justify-between w-full pt-2 border-t border-slate-200">
-                      <div className="h-3 w-10 border border-dashed border-emerald-400 rounded bg-emerald-50 text-[6px] text-emerald-600 flex items-center justify-center font-bold">
-                        Signed
-                      </div>
-                      <div className="h-3 w-10 border border-dashed border-slate-300 rounded"></div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between items-center text-[7px] text-slate-400">
-                    <span>Custumu</span>
-                    <span>p. {idx + 1}</span>
-                  </div>
-                </div>
+                )}
 
                 {/* Page Number Badge */}
-                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/70 backdrop-blur-sm text-[9px] font-bold text-white">
+                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-sm text-[9px] font-bold text-white shadow">
                   {idx + 1}
                 </div>
               </div>

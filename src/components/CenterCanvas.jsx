@@ -8,15 +8,15 @@ import {
   Stamp, 
   ZoomIn, 
   ZoomOut, 
-  Maximize2,
-  FileCheck2,
-  Lock,
   ChevronLeft,
   ChevronRight,
-  ShieldCheck
+  Lock,
+  Loader2
 } from 'lucide-react';
+import { loadPdfDoc, renderPdfPage } from '../services/pdfRenderer';
 
 export default function CenterCanvas({
+  docBuffer,
   activePageIndex,
   totalPages,
   setActivePageIndex,
@@ -25,7 +25,8 @@ export default function CenterCanvas({
   setAnnotations,
   onAddWatermark
 }) {
-  const canvasRef = useRef(null);
+  const pdfCanvasRef = useRef(null);
+  const annotationCanvasRef = useRef(null);
   const [zoom, setZoom] = useState(100);
   const [activeTool, setActiveTool] = useState('select'); // 'select' | 'text' | 'draw' | 'highlight' | 'redact'
   const [isDrawing, setIsDrawing] = useState(false);
@@ -33,10 +34,56 @@ export default function CenterCanvas({
   const [currentPath, setCurrentPath] = useState([]);
   const [textInputPos, setTextInputPos] = useState(null);
   const [textInputValue, setTextInputValue] = useState('');
+  const [isRenderingPage, setIsRenderingPage] = useState(false);
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 612, height: 792 });
 
-  // Draw annotations on active page
+  // 1. Render the REAL uploaded PDF page onto pdfCanvasRef
   useEffect(() => {
-    const canvas = canvasRef.current;
+    let isCancelled = false;
+
+    async function renderPage() {
+      if (!docBuffer || !pdfCanvasRef.current) return;
+      setIsRenderingPage(true);
+
+      try {
+        const pdfDoc = await loadPdfDoc(docBuffer);
+        if (isCancelled) return;
+
+        const dimensions = await renderPdfPage(
+          pdfDoc,
+          activePageIndex + 1,
+          pdfCanvasRef.current,
+          zoom
+        );
+
+        if (dimensions && !isCancelled) {
+          setCanvasDimensions(dimensions);
+
+          // Synchronize the overlay annotation canvas dimensions
+          if (annotationCanvasRef.current) {
+            annotationCanvasRef.current.width = dimensions.width;
+            annotationCanvasRef.current.height = dimensions.height;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to render PDF page onto canvas', err);
+      } finally {
+        if (!isCancelled) {
+          setIsRenderingPage(false);
+        }
+      }
+    }
+
+    renderPage();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [docBuffer, activePageIndex, zoom]);
+
+  // 2. Render Annotations onto annotationCanvasRef
+  useEffect(() => {
+    const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -46,8 +93,8 @@ export default function CenterCanvas({
     pageAnnotations.forEach((anno) => {
       if (anno.type === 'draw' || anno.type === 'highlight') {
         ctx.beginPath();
-        ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(253, 224, 71, 0.4)' : (anno.color || '#0284C7');
-        ctx.lineWidth = anno.type === 'highlight' ? 14 : (anno.width || 3);
+        ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : (anno.color || '#0284C7');
+        ctx.lineWidth = anno.type === 'highlight' ? 16 : (anno.width || 3);
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -61,10 +108,9 @@ export default function CenterCanvas({
         ctx.fillRect(anno.x, anno.y, anno.width, anno.height);
       } else if (anno.type === 'text') {
         ctx.fillStyle = '#1e293b';
-        ctx.font = '14px Inter, sans-serif';
+        ctx.font = 'bold 14px Inter, sans-serif';
         ctx.fillText(anno.text, anno.x, anno.y);
       } else if (anno.type === 'signature') {
-        // Render signature image
         const img = new Image();
         img.src = anno.dataUrl;
         img.onload = () => {
@@ -75,12 +121,14 @@ export default function CenterCanvas({
         }
       }
     });
-  }, [activePageIndex, annotations, zoom]);
+  }, [activePageIndex, annotations, canvasDimensions]);
 
   const handleMouseDown = (e) => {
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvasRef.current.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvasRef.current.height / rect.height);
+    const canvas = annotationCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       setIsDrawing(true);
@@ -95,17 +143,19 @@ export default function CenterCanvas({
 
   const handleMouseMove = (e) => {
     if (!isDrawing) return;
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvasRef.current.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvasRef.current.height / rect.height);
+    const canvas = annotationCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       setCurrentPath((prev) => [...prev, { x, y }]);
 
-      const ctx = canvasRef.current.getContext('2d');
+      const ctx = canvas.getContext('2d');
       ctx.beginPath();
-      ctx.strokeStyle = activeTool === 'highlight' ? 'rgba(253, 224, 71, 0.4)' : '#0284C7';
-      ctx.lineWidth = activeTool === 'highlight' ? 14 : 3;
+      ctx.strokeStyle = activeTool === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : '#0284C7';
+      ctx.lineWidth = activeTool === 'highlight' ? 16 : 3;
       ctx.lineCap = 'round';
       const last = currentPath[currentPath.length - 1];
       if (last) {
@@ -119,9 +169,11 @@ export default function CenterCanvas({
   const handleMouseUp = (e) => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const rect = canvasRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvasRef.current.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvasRef.current.height / rect.height);
+    const canvas = annotationCanvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       if (currentPath.length > 1) {
@@ -179,7 +231,7 @@ export default function CenterCanvas({
     <main className="flex-1 flex flex-col bg-dark-bg h-[calc(100vh-4rem)] overflow-hidden relative">
       {/* Top Floating Action Toolbar */}
       <div className="h-12 border-b border-dark-border bg-dark-surface/90 backdrop-blur-md px-4 flex items-center justify-between z-20">
-        {/* Left: Tools */}
+        {/* Tools */}
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setActiveTool('select')}
@@ -240,7 +292,7 @@ export default function CenterCanvas({
                 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                 : 'text-slate-400 hover:text-white hover:bg-dark-hover'
             }`}
-            title="Redact / Blackout Rectangle"
+            title="Redact / Blackout Box"
           >
             <Square className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Redact</span>
@@ -267,7 +319,7 @@ export default function CenterCanvas({
           </button>
         </div>
 
-        {/* Right: Zoom & Page Navigation */}
+        {/* Zoom & Page Navigation */}
         <div className="flex items-center space-x-2">
           {/* Page controls */}
           <div className="flex items-center space-x-1 bg-dark-card px-2 py-1 rounded-lg border border-dark-border text-xs text-slate-300">
@@ -311,132 +363,35 @@ export default function CenterCanvas({
         </div>
       </div>
 
-      {/* Main Canvas Document Viewer Area */}
-      <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-dark-bg/60">
+      {/* Main Real PDF Canvas Viewport */}
+      <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-dark-bg/80">
         <div
-          className="relative bg-white shadow-2xl rounded-sm transition-all duration-200 select-none border border-slate-300"
+          className="relative bg-white shadow-2xl rounded-sm transition-all duration-200 select-none border border-slate-300 flex items-center justify-center"
           style={{
-            width: `${612 * (zoom / 100)}px`,
-            height: `${792 * (zoom / 100)}px`,
+            width: `${canvasDimensions.width}px`,
+            height: `${canvasDimensions.height}px`,
+            maxWidth: '100%',
           }}
         >
-          {/* Document Content Simulation */}
-          <div className="w-full h-full p-8 text-slate-800 text-xs overflow-hidden pointer-events-none select-none">
-            {activePageIndex === 0 && (
-              <div className="space-y-4">
-                <div className="bg-slate-900 text-cyan-400 p-4 -m-8 mb-6">
-                  <h1 className="text-base font-bold tracking-tight">CUSTUMU CLOUD SERVICES AGREEMENT</h1>
-                  <p className="text-[9px] text-slate-400 mt-1">Document ID: CST-2026-8942 • Version: 2.4 (Active)</p>
-                </div>
-
-                <div className="space-y-1">
-                  <h2 className="font-bold text-slate-900 text-[11px] uppercase tracking-wide">1. Parties & Engagement Scope</h2>
-                  <p className="text-[9.5px] text-slate-600 leading-relaxed">
-                    This Master Services Agreement ("Agreement") is entered into as of September 9, 2026, by and
-                    between Custumu Document Technologies ("Provider"), and Acme Enterprises Inc. ("Client").
-                    Provider delivers automated AI workspace infrastructure, OCR document parsing, and secure
-                    client-side WebAssembly document transformation pipelines.
-                  </p>
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <h2 className="font-bold text-slate-900 text-[11px] uppercase tracking-wide">2. Financial Schedule & Invoicing</h2>
-                  <div className="border border-slate-200 rounded overflow-hidden text-[9px]">
-                    <div className="bg-slate-100 p-1.5 font-bold flex justify-between border-b border-slate-200 text-slate-800">
-                      <span className="w-2/5">Service Tier</span>
-                      <span className="w-1/5 text-center">Units</span>
-                      <span className="w-1/5 text-right">Rate</span>
-                      <span className="w-1/5 text-right">Subtotal</span>
-                    </div>
-                    <div className="p-1.5 flex justify-between border-b border-slate-100 text-slate-700">
-                      <span className="w-2/5 font-medium">AI Document Workspace</span>
-                      <span className="w-1/5 text-center text-slate-500">50 Seats</span>
-                      <span className="w-1/5 text-right">$49.00 / seat</span>
-                      <span className="w-1/5 text-right font-medium">$2,450.00</span>
-                    </div>
-                    <div className="p-1.5 flex justify-between border-b border-slate-100 text-slate-700">
-                      <span className="w-2/5 font-medium">High-Speed OCR Pipeline</span>
-                      <span className="w-1/5 text-center text-slate-500">10,000 Pages</span>
-                      <span className="w-1/5 text-right">$0.05 / page</span>
-                      <span className="w-1/5 text-right font-medium">$500.00</span>
-                    </div>
-                    <div className="p-1.5 flex justify-between bg-slate-50 font-bold text-brand-600">
-                      <span className="w-3/5">Total Monthly Retainer</span>
-                      <span className="w-2/5 text-right">$2,950.00</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1 pt-2">
-                  <h2 className="font-bold text-slate-900 text-[11px] uppercase tracking-wide">3. Payment & Termination Terms</h2>
-                  <p className="text-[9.5px] text-slate-600 leading-relaxed">
-                    <strong>Payment Terms:</strong> Net 30 days from invoice dispatch date.<br />
-                    <strong>Late Interest:</strong> Outstanding balances incur 1.5% per month or statutory maximum.<br />
-                    <strong>Termination Notice:</strong> Either party may terminate with 30 days written notice.<br />
-                    <strong>Data Retention:</strong> In Private Mode, zero document data leaves client device memory.
-                  </p>
-                </div>
+          {/* Loading indicator */}
+          {isRenderingPage && (
+            <div className="absolute inset-0 bg-dark-bg/60 backdrop-blur-xs flex items-center justify-center z-30">
+              <div className="flex items-center space-x-2 text-brand-400 text-xs font-medium bg-dark-card px-3 py-1.5 rounded-lg border border-dark-border shadow-lg">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Rendering Page {activePageIndex + 1}...</span>
               </div>
-            )}
+            </div>
+          )}
 
-            {activePageIndex === 1 && (
-              <div className="space-y-4">
-                <h1 className="text-sm font-bold text-brand-700 border-b border-slate-200 pb-2">
-                  SERVICE LEVEL AGREEMENT & PRIVACY ENCLAVE
-                </h1>
-
-                <div className="space-y-2 text-[9.5px] text-slate-700 leading-relaxed">
-                  <p><strong>1. UPTIME COMMITMENT:</strong> 99.95% monthly uptime across Cloud API endpoints.</p>
-                  <p><strong>2. ZERO-KNOWLEDGE PRIVATE MODE:</strong><br />
-                    When user toggles "Private Mode", all PDF manipulation, reordering, splitting, merging,
-                    and annotations execute exclusively inside local WebAssembly runtime.
-                    No file bytes or metadata are transmitted over network.
-                  </p>
-                  <p><strong>3. CLOUD ENCLAVE PROCESSING:</strong><br />
-                    When Cloud Mode is utilized for multi-language OCR or complex LibreOffice conversions,
-                    all payload buffers are encrypted in transit (TLS 1.3) and in memory, and purged
-                    immediately upon completion of user download or 60 minutes, whichever is earlier.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activePageIndex === 2 && (
-              <div className="space-y-6">
-                <h1 className="text-sm font-bold text-brand-700 border-b border-slate-200 pb-2">
-                  EXECUTION & AUTHORIZED SIGNATURES
-                </h1>
-
-                <p className="text-[9.5px] text-slate-600">
-                  IN WITNESS WHEREOF, the authorized representatives have executed this Master Agreement.
-                </p>
-
-                <div className="grid grid-cols-2 gap-6 pt-4">
-                  <div className="border border-slate-200 p-4 rounded bg-slate-50 space-y-2">
-                    <div className="font-bold text-[10px] text-slate-700">PROVIDER: CUSTUMU TECHNOLOGIES</div>
-                    <div className="h-10 flex items-center text-emerald-600 font-semibold text-xs border-b border-dashed border-slate-300">
-                      [ e-Signed via Custumu ]
-                    </div>
-                    <div className="text-[9px] text-slate-500">Date: September 9, 2026</div>
-                  </div>
-
-                  <div className="border border-slate-200 p-4 rounded bg-slate-50 space-y-2">
-                    <div className="font-bold text-[10px] text-slate-700">CLIENT: ACME ENTERPRISES INC.</div>
-                    <div className="h-10 flex items-center text-slate-400 text-xs border-b border-dashed border-slate-300 italic">
-                      Click "Sign" to stamp signature
-                    </div>
-                    <div className="text-[9px] text-slate-500">Date: ________________________</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Interactive Annotation Canvas Overlay */}
+          {/* 1. Base Layer: Real Uploaded PDF Page Rendered on Canvas */}
           <canvas
-            ref={canvasRef}
-            width={612}
-            height={792}
+            ref={pdfCanvasRef}
+            className="w-full h-full block"
+          />
+
+          {/* 2. Top Layer: Interactive Annotation, Draw & Redaction Canvas */}
+          <canvas
+            ref={annotationCanvasRef}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
@@ -449,8 +404,8 @@ export default function CenterCanvas({
               onSubmit={handleAddTextSubmit}
               className="absolute z-30 bg-white border border-brand-500 shadow-xl rounded p-1 flex items-center space-x-1"
               style={{
-                left: `${(textInputPos.x / 612) * 100}%`,
-                top: `${(textInputPos.y / 792) * 100}%`,
+                left: `${(textInputPos.x / canvasDimensions.width) * 100}%`,
+                top: `${(textInputPos.y / canvasDimensions.height) * 100}%`,
               }}
             >
               <input

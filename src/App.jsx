@@ -27,6 +27,7 @@ import {
 } from './services/pdfEngine';
 
 import { extractPdfTextLayers } from './services/pdfTextExtractor';
+import { loadPdfDoc, renderThumbnail } from './services/pdfRenderer';
 
 import { 
   Merge, 
@@ -45,6 +46,7 @@ export default function App() {
   const [docName, setDocName] = useState('');
   const [docMeta, setDocMeta] = useState({ pageCount: 0, pages: [], sizeBytes: 0 });
   const [docContext, setDocContext] = useState(null);
+  const [thumbnails, setThumbnails] = useState([]);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [isPrivateMode, setIsPrivateMode] = useState(true);
   const [initialPrompt, setInitialPrompt] = useState('');
@@ -72,6 +74,21 @@ export default function App() {
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Generate real page thumbnails whenever docBuffer changes
+  const updateThumbnails = async (buffer, pageCount) => {
+    try {
+      const pdfDoc = await loadPdfDoc(buffer);
+      const thumbs = [];
+      for (let i = 1; i <= pageCount; i++) {
+        const thumbData = await renderThumbnail(pdfDoc, i);
+        thumbs.push(thumbData);
+      }
+      setThumbnails(thumbs);
+    } catch (e) {
+      console.warn('Could not generate thumbnails', e);
+    }
+  };
+
   // Push state to history
   const pushState = (newBuffer, newMeta, newAnnotations = annotations) => {
     const nextHistory = history.slice(0, historyIndex + 1);
@@ -82,6 +99,7 @@ export default function App() {
     });
     setHistory(nextHistory);
     setHistoryIndex(nextHistory.length - 1);
+    updateThumbnails(newBuffer, newMeta.pageCount);
   };
 
   const handleUndo = () => {
@@ -91,6 +109,7 @@ export default function App() {
       setDocMeta(prev.meta);
       setAnnotations(prev.annotations);
       setHistoryIndex(historyIndex - 1);
+      updateThumbnails(prev.buffer, prev.meta.pageCount);
       showToast('Action undone', 'info');
     }
   };
@@ -102,11 +121,12 @@ export default function App() {
       setDocMeta(next.meta);
       setAnnotations(next.annotations);
       setHistoryIndex(historyIndex + 1);
+      updateThumbnails(next.buffer, next.meta.pageCount);
       showToast('Action redone', 'info');
     }
   };
 
-  // Load new file buffer
+  // Load new file buffer (from user file upload or demo)
   const loadBuffer = async (buffer, name, prompt = '') => {
     try {
       const meta = await inspectPdf(buffer);
@@ -121,6 +141,9 @@ export default function App() {
       setHistory([{ buffer, meta, annotations: [] }]);
       setHistoryIndex(0);
 
+      // Generate real thumbnails from the actual PDF buffer
+      updateThumbnails(buffer, meta.pageCount);
+
       // Extract real text layers for AI Grounding / RAG
       extractPdfTextLayers(buffer).then((context) => {
         setDocContext(context);
@@ -133,10 +156,10 @@ export default function App() {
     }
   };
 
-  // Auto-generate starter demo document
+  // Load sample demo agreement only if explicitly requested
   const handleLoadDemo = async (prompt = '') => {
     const demoBytes = await createDemoDocument();
-    await loadBuffer(demoBytes, 'Custumu_MSA_Contract.pdf', prompt);
+    await loadBuffer(demoBytes, 'Custumu_Sample_Agreement.pdf', prompt);
   };
 
   // Reset document
@@ -146,6 +169,7 @@ export default function App() {
       setDocName('');
       setDocMeta({ pageCount: 0, pages: [], sizeBytes: 0 });
       setDocContext(null);
+      setThumbnails([]);
       setHistory([]);
       setHistoryIndex(-1);
     }
@@ -268,13 +292,13 @@ export default function App() {
         pageIndex: activePageIndex,
         type: 'signature',
         dataUrl: signatureDataUrl,
-        x: 200,
-        y: 460,
+        x: 180,
+        y: 350,
         width: 170,
         height: 60,
       }
     ]);
-    showToast('Signature stamped on active page');
+    showToast('Signature placed on active page');
   };
 
   // Apply Compression
@@ -338,16 +362,8 @@ export default function App() {
 
   // Export Word
   const handleExportWord = () => {
-    const textContent = docContext?.fullText || 
-      'CUSTUMU CLOUD SERVICES AGREEMENT\n' +
-      'Version 2.4 (Active)\n\n' +
-      '1. PARTIES & ENGAGEMENT SCOPE\n' +
-      'This Master Services Agreement is entered into by Custumu Document Technologies and Acme Enterprises Inc.\n\n' +
-      '2. FINANCIAL SCHEDULE\n' +
-      '• Total Monthly Retainer: $2,950.00 / month\n\n' +
-      '3. PAYMENT TERMS\n' +
-      'Net 30 days. Outstanding balances incur 1.5% interest per month.';
-    exportTextToWord(docName || 'Document', textContent, 'Custumu_Converted_Document.doc');
+    const textContent = docContext?.fullText || 'Custumu Document Content';
+    exportTextToWord(docName || 'Document', textContent, `Custumu_${docName.replace(/\.pdf$/i, '')}.doc`);
     showToast('Downloaded Word document (.doc)');
   };
 
@@ -355,16 +371,13 @@ export default function App() {
   const handleExportExcel = (customTables) => {
     const tables = customTables || [
       {
-        name: 'Financial Schedule',
+        name: 'Extracted Tables',
         rows: [
-          { 'Service Tier': 'AI Document Workspace', 'Units': '50 Seats', 'Rate (USD)': '$49.00 / seat', 'Subtotal': '$2,450.00' },
-          { 'Service Tier': 'High-Speed OCR Pipeline', 'Units': '10,000 Pages', 'Rate (USD)': '$0.05 / page', 'Subtotal': '$500.00' },
-          { 'Service Tier': 'Private Mode WASM Engine', 'Units': 'Unlimited', 'Rate (USD)': 'Included', 'Subtotal': '$0.00' },
-          { 'Service Tier': 'Total Monthly Retainer', 'Units': '—', 'Rate (USD)': '—', 'Subtotal': '$2,950.00' },
+          { 'Item': 'Document Analysis', 'File': docName || 'Document', 'Status': 'Verified' }
         ],
       },
     ];
-    exportTableToExcel(tables, 'Custumu_Extracted_Financials.xlsx');
+    exportTableToExcel(tables, `Custumu_${(docName || 'Data').replace(/\.pdf$/i, '')}.xlsx`);
     showToast('Downloaded Excel spreadsheet (.xlsx)');
   };
 
@@ -489,9 +502,10 @@ export default function App() {
 
           {/* 3-Panel Grid */}
           <div className="flex-1 flex overflow-hidden">
-            {/* Left: Pages Thumbnails */}
+            {/* Left: Real Page Thumbnails */}
             <LeftPanelPages
               pages={docMeta.pages}
+              thumbnails={thumbnails}
               activePageIndex={activePageIndex}
               setActivePageIndex={setActivePageIndex}
               onRotatePage={handleRotatePage}
@@ -502,8 +516,9 @@ export default function App() {
               onOpenSplitModal={() => setIsSplitModalOpen(true)}
             />
 
-            {/* Center: PDF Editor Canvas */}
+            {/* Center: Real PDF Canvas Viewer & Interactive Annotations */}
             <CenterCanvas
+              docBuffer={docBuffer}
               activePageIndex={activePageIndex}
               totalPages={docMeta.pageCount}
               setActivePageIndex={setActivePageIndex}

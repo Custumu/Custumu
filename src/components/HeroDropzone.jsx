@@ -1,10 +1,10 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileText, Sparkles, Wand2, Shield, Zap, FileSpreadsheet, Scissors, Layers, Minimize2 } from 'lucide-react';
+import { UploadCloud, FileText, Sparkles, Wand2, Shield, Zap, FileSpreadsheet, Scissors, Minimize2 } from 'lucide-react';
 
 export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [promptInput, setPromptInput] = useState('');
+  const [pendingPrompt, setPendingPrompt] = useState('');
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -20,28 +20,29 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files[0]) {
-      processFile(files[0]);
+      processFile(files[0], pendingPrompt);
     }
   };
 
   const handleFileChange = (e) => {
     const files = e.target.files;
     if (files && files[0]) {
-      processFile(files[0]);
+      processFile(files[0], pendingPrompt);
     }
   };
 
-  const processFile = async (file) => {
+  const processFile = async (file, promptToPass = '') => {
     if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
       alert('Please upload a PDF file.');
       return;
     }
     const buffer = await file.arrayBuffer();
-    onFileLoaded(buffer, file.name, promptInput);
+    onFileLoaded(buffer, file.name, promptToPass);
   };
 
-  const handleDemoClick = (demoPrompt = '') => {
-    onLoadDemo(demoPrompt);
+  const handleQuickActionClick = (actionPrompt) => {
+    setPendingPrompt(actionPrompt);
+    fileInputRef.current?.click();
   };
 
   return (
@@ -93,17 +94,17 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
             Drop your PDF here, or <span className="text-brand-400 underline underline-offset-4">browse</span>
           </h3>
           <p className="text-xs text-slate-400 mb-6">
-            Supports multi-page contracts, invoices, scans, and financial tables
+            Supports multi-page contracts, portfolios, invoices, scans, and financial documents
           </p>
 
           {/* Quick Action Badges */}
           <div className="w-full max-w-lg pt-4 border-t border-dark-border/80">
             <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-3">
-              What do you want to do?
+              Choose your PDF to:
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" onClick={(e) => e.stopPropagation()}>
               <button
-                onClick={() => handleDemoClick('Open in visual editor to annotate and sign')}
+                onClick={() => handleQuickActionClick('Open in visual editor to annotate and sign')}
                 className="p-2 rounded-lg bg-dark-card hover:bg-dark-hover border border-dark-border text-xs text-slate-300 hover:text-white flex items-center justify-center space-x-1.5 transition"
               >
                 <Scissors className="w-3.5 h-3.5 text-cyan-400" />
@@ -111,7 +112,7 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
               </button>
 
               <button
-                onClick={() => handleDemoClick('Extract tables into Excel spreadsheet')}
+                onClick={() => handleQuickActionClick('Extract tables into Excel spreadsheet')}
                 className="p-2 rounded-lg bg-dark-card hover:bg-dark-hover border border-dark-border text-xs text-slate-300 hover:text-white flex items-center justify-center space-x-1.5 transition"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
@@ -119,7 +120,7 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
               </button>
 
               <button
-                onClick={() => handleDemoClick('Compress this document under 5MB')}
+                onClick={() => handleQuickActionClick('Compress this document under 5MB')}
                 className="p-2 rounded-lg bg-dark-card hover:bg-dark-hover border border-dark-border text-xs text-slate-300 hover:text-white flex items-center justify-center space-x-1.5 transition"
               >
                 <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
@@ -127,7 +128,7 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
               </button>
 
               <button
-                onClick={() => handleDemoClick('What are the payment terms and obligations?')}
+                onClick={() => handleQuickActionClick('What are the key takeaways of this document?')}
                 className="p-2 rounded-lg bg-dark-card hover:bg-dark-hover border border-dark-border text-xs text-slate-300 hover:text-white flex items-center justify-center space-x-1.5 transition"
               >
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
@@ -138,19 +139,19 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
         </div>
       </div>
 
-      {/* Demo Document Quick Launch */}
+      {/* Demo Document Link */}
       <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <span className="text-xs text-slate-500">Don't have a PDF right now?</span>
+        <span className="text-xs text-slate-500">Want to test without a file?</span>
         <button
-          onClick={() => handleDemoClick()}
+          onClick={() => onLoadDemo()}
           className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-semibold transition"
         >
           <Wand2 className="w-3.5 h-3.5 text-brand-400" />
-          <span>Load Sample 3-Page Agreement & Studio</span>
+          <span>Load Sample 3-Page Agreement Demo</span>
         </button>
       </div>
 
-      {/* Feature Highlights Grid */}
+      {/* Features Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-12 text-left">
         <div className="glass-card p-4 rounded-xl border border-dark-border">
           <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 w-fit mb-2.5">

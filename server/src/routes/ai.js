@@ -81,11 +81,17 @@ router.post('/suggest-prompts', async (req, res) => {
   const apiKey = process.env.OPENAI_API_KEY;
 
   if (!apiKey) {
-    return res.status(500).json({ error: 'Server OPENAI_API_KEY is not configured', prompts: [] });
+    return res.status(500).json({ 
+      error: 'OPENAI_API_KEY is not configured in server/.env', 
+      prompts: [] 
+    });
   }
 
   if (!documentText || typeof documentText !== 'string' || documentText.trim().length < 20) {
-    return res.json({ prompts: [] });
+    return res.status(400).json({ 
+      error: 'Missing or insufficient "documentText" in request body (minimum 20 characters required).', 
+      prompts: [] 
+    });
   }
 
   try {
@@ -113,23 +119,46 @@ Format your output strictly as a JSON array of objects with keys "label" (short 
       }),
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content?.trim() || '';
-      const cleanJson = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-      const parsed = JSON.parse(cleanJson);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return res.json({ prompts: parsed.slice(0, 5) });
-      }
+    if (!response.ok) {
+      const errJson = await response.json().catch(() => null);
+      const errMsg = errJson?.error?.message || errJson?.message || await response.text().catch(() => 'Unknown error');
+      console.error('OpenAI API error in /suggest-prompts:', response.status, errMsg);
+      return res.status(response.status).json({ 
+        error: `OpenAI API Error (${response.status}): ${errMsg}`, 
+        prompts: [] 
+      });
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content?.trim() || '';
+    const cleanJson = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    
+    let parsed;
+    try {
+      parsed = JSON.parse(cleanJson);
+    } catch (parseErr) {
+      console.error('Failed to parse OpenAI JSON output:', content);
+      return res.status(502).json({ 
+        error: `OpenAI returned non-JSON output: "${content.slice(0, 150)}"`, 
+        prompts: [] 
+      });
+    }
+
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return res.json({ prompts: parsed.slice(0, 5) });
     } else {
-      const errText = await response.text().catch(() => '');
-      console.error('OpenAI suggest-prompts error:', response.status, errText);
+      return res.status(502).json({ 
+        error: 'OpenAI returned an empty or invalid format array', 
+        prompts: [] 
+      });
     }
   } catch (err) {
-    console.error('Error generating AI prompt suggestions:', err);
+    console.error('Exception in /suggest-prompts:', err);
+    return res.status(500).json({ 
+      error: `Internal server exception: ${err.message}`, 
+      prompts: [] 
+    });
   }
-
-  return res.json({ prompts: [] });
 });
 
 export default router;

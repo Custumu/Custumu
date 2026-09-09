@@ -132,14 +132,18 @@ export async function fetchSuggestedPrompts(documentText = '', pageCount = 1) {
       body: JSON.stringify({ documentText, pageCount }),
     });
 
-    if (res.ok) {
-      const data = await res.json();
-      if (Array.isArray(data?.prompts) && data.prompts.length > 0) {
-        return data.prompts;
-      }
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      console.error('[Suggest Prompts Error]', res.status, data?.error || 'Unknown error');
+      return [];
+    }
+
+    if (Array.isArray(data?.prompts)) {
+      return data.prompts;
     }
   } catch (err) {
-    console.warn('Failed to fetch AI prompt suggestions:', err);
+    console.error('Failed to fetch AI prompt suggestions:', err);
   }
 
   return [];

@@ -525,7 +525,7 @@ export default function CenterCanvas({
         {/* Right: Page Navigation & Zoom Controls */}
         <div className="flex items-center space-x-2">
           {/* Page controls */}
-          <div className="flex items-center space-x-1 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">
+          {/* <div className="flex items-center space-x-1 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">
             <button
               onClick={() => setActivePageIndex(Math.max(0, activePageIndex - 1))}
               disabled={activePageIndex === 0}
@@ -545,7 +545,7 @@ export default function CenterCanvas({
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
-          </div>
+          </div> */}
 
           {/* Zoom controls */}
           <div className="flex items-center space-x-1 bg-white px-1.5 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">

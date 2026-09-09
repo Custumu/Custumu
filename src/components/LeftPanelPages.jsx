@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trash2, RotateCw, Copy, ArrowUp, ArrowDown, Plus, Layers, Split } from 'lucide-react';
 
 export default function LeftPanelPages({
@@ -13,6 +13,18 @@ export default function LeftPanelPages({
   onAddPage,
   onOpenSplitModal
 }) {
+  const [contextMenu, setContextMenu] = useState(null); // { x: number, y: number, pageIndex: number }
+
+  useEffect(() => {
+    const handleClose = () => setContextMenu(null);
+    window.addEventListener('click', handleClose);
+    window.addEventListener('scroll', handleClose, true);
+    return () => {
+      window.removeEventListener('click', handleClose);
+      window.removeEventListener('scroll', handleClose, true);
+    };
+  }, []);
+
   return (
     <aside className="w-64 border-r border-slate-200 bg-white/90 backdrop-blur-sm flex flex-col h-full z-10 shrink-0">
       {/* Header */}
@@ -43,8 +55,8 @@ export default function LeftPanelPages({
         </div>
       </div>
 
-      {/* Real Page Thumbnails List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      {/* Real Page Thumbnails List - Single Clean Design */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-3 flex flex-col items-center">
         {pages.map((page, idx) => {
           const isActive = idx === activePageIndex;
           const thumbUrl = thumbnails[idx];
@@ -53,89 +65,121 @@ export default function LeftPanelPages({
             <div
               key={idx}
               onClick={() => setActivePageIndex(idx)}
-              className={`group relative rounded-xl p-2.5 transition-all cursor-pointer border ${
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setActivePageIndex(idx);
+                setContextMenu({
+                  x: e.clientX,
+                  y: e.clientY,
+                  pageIndex: idx,
+                });
+              }}
+              className={`relative w-36 aspect-[8.5/11] bg-white rounded-md transition-all cursor-pointer overflow-hidden flex items-center justify-center border-2 shrink-0 ${
                 isActive
-                  ? 'bg-brand-500/10 border-brand-500/50 shadow-md shadow-brand-500/10'
-                  : 'bg-white/50 border-slate-200 hover:border-slate-600 hover:bg-white'
+                  ? 'border-brand-500 shadow-md shadow-brand-500/15 ring-2 ring-brand-500/20'
+                  : 'border-slate-200 hover:border-slate-300 hover:shadow-xs'
               }`}
             >
-              {/* Real Thumbnail Preview */}
-              <div className="w-full aspect-[8.5/11] bg-white rounded-lg shadow-sm overflow-hidden flex items-center justify-center relative border border-slate-300">
-                {thumbUrl ? (
-                  <img
-                    src={thumbUrl}
-                    alt={`Page ${idx + 1}`}
-                    className="w-full h-full object-contain pointer-events-none select-none"
-                  />
-                ) : (
-                  <div className="text-slate-600 text-[10px] flex flex-col items-center">
-                    <span>Page {idx + 1}</span>
-                  </div>
-                )}
-
-                {/* Page Number Badge */}
-                <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/75 backdrop-blur-sm text-[9px] font-bold text-white shadow">
-                  {idx + 1}
+              {thumbUrl ? (
+                <img
+                  src={thumbUrl}
+                  alt={`Page ${idx + 1}`}
+                  className="w-full h-full object-contain pointer-events-none select-none"
+                />
+              ) : (
+                <div className="text-slate-400 text-xs flex flex-col items-center">
+                  <span>Page {idx + 1}</span>
                 </div>
-              </div>
+              )}
 
-              {/* Action Bar for Page */}
-              <div className="mt-2 flex items-center justify-between text-slate-600 text-xs pt-1 border-t border-slate-200/50">
-                <span className="text-[11px] font-medium text-slate-700">
-                  Page {idx + 1}
-                </span>
-
-                <div className="flex items-center space-x-1 opacity-80 group-hover:opacity-100 transition">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onRotatePage(idx); }}
-                    className="p-1 hover:text-brand-400 hover:bg-slate-100 rounded"
-                    title="Rotate 90°"
-                  >
-                    <RotateCw className="w-3 h-3" />
-                  </button>
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDuplicatePage(idx); }}
-                    className="p-1 hover:text-cyan-400 hover:bg-slate-100 rounded"
-                    title="Duplicate Page"
-                  >
-                    <Copy className="w-3 h-3" />
-                  </button>
-
-                  {idx > 0 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onMovePage(idx, idx - 1); }}
-                      className="p-1 hover:text-slate-900 hover:bg-slate-100 rounded"
-                      title="Move Up"
-                    >
-                      <ArrowUp className="w-3 h-3" />
-                    </button>
-                  )}
-
-                  {idx < pages.length - 1 && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onMovePage(idx, idx + 1); }}
-                      className="p-1 hover:text-slate-900 hover:bg-slate-100 rounded"
-                      title="Move Down"
-                    >
-                      <ArrowDown className="w-3 h-3" />
-                    </button>
-                  )}
-
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDeletePage(idx); }}
-                    className="p-1 hover:text-rose-400 hover:bg-slate-100 rounded"
-                    title="Delete Page"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
+              {/* Page Number Badge: Top Left showing Page X / Total */}
+              <div className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 backdrop-blur-xs text-[10px] font-semibold text-white shadow-xs select-none pointer-events-none">
+                {idx + 1} / {pages.length}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Floating Right-Click Context Menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-50 bg-white rounded-xl shadow-xl border border-slate-200 py-1.5 w-44 text-xs select-none animate-in fade-in zoom-in-95 duration-100"
+          style={{
+            top: `${Math.min(contextMenu.y, window.innerHeight - 210)}px`,
+            left: `${Math.min(contextMenu.x, window.innerWidth - 190)}px`,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+            Page {contextMenu.pageIndex + 1} of {pages.length}
+          </div>
+
+          <button
+            onClick={() => {
+              onRotatePage(contextMenu.pageIndex);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 hover:bg-slate-100 hover:text-brand-600 transition text-left cursor-pointer"
+          >
+            <RotateCw className="w-3.5 h-3.5 text-brand-500" />
+            <span>Rotate 90°</span>
+          </button>
+
+          <button
+            onClick={() => {
+              onDuplicatePage(contextMenu.pageIndex);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 hover:bg-slate-100 hover:text-cyan-600 transition text-left cursor-pointer"
+          >
+            <Copy className="w-3.5 h-3.5 text-cyan-500" />
+            <span>Duplicate Page</span>
+          </button>
+
+          {contextMenu.pageIndex > 0 && (
+            <button
+              onClick={() => {
+                onMovePage(contextMenu.pageIndex, contextMenu.pageIndex - 1);
+                setContextMenu(null);
+              }}
+              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer"
+            >
+              <ArrowUp className="w-3.5 h-3.5 text-slate-500" />
+              <span>Move Up</span>
+            </button>
+          )}
+
+          {contextMenu.pageIndex < pages.length - 1 && (
+            <button
+              onClick={() => {
+                onMovePage(contextMenu.pageIndex, contextMenu.pageIndex + 1);
+                setContextMenu(null);
+              }}
+              className="w-full px-3 py-1.5 flex items-center gap-2 text-slate-700 hover:bg-slate-100 hover:text-slate-900 transition text-left cursor-pointer"
+            >
+              <ArrowDown className="w-3.5 h-3.5 text-slate-500" />
+              <span>Move Down</span>
+            </button>
+          )}
+
+          <div className="my-1 border-t border-slate-100" />
+
+          <button
+            onClick={() => {
+              onDeletePage(contextMenu.pageIndex);
+              setContextMenu(null);
+            }}
+            className="w-full px-3 py-1.5 flex items-center gap-2 text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span>Delete Page</span>
+          </button>
+        </div>
+      )}
     </aside>
   );
 }
+
 

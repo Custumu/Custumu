@@ -10,6 +10,7 @@ import CompressModal from './components/modals/CompressModal';
 import SplitModal from './components/modals/SplitModal';
 import MergeModal from './components/modals/MergeModal';
 import OCRModal from './components/modals/OCRModal';
+import ApiKeyModal from './components/modals/ApiKeyModal';
 
 import {
   createDemoDocument,
@@ -20,11 +21,12 @@ import {
   mergePdfs,
   splitPdf,
   addWatermarkToPdf,
-  stampSignature,
   compressPdf,
   exportTableToExcel,
   exportTextToWord,
 } from './services/pdfEngine';
+
+import { extractPdfTextLayers } from './services/pdfTextExtractor';
 
 import { 
   Merge, 
@@ -34,15 +36,15 @@ import {
   FileSpreadsheet, 
   ScanText, 
   CheckCircle2, 
-  AlertCircle 
+  Sparkles
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 export default function App() {
   // Document state
   const [docBuffer, setDocBuffer] = useState(null);
   const [docName, setDocName] = useState('');
   const [docMeta, setDocMeta] = useState({ pageCount: 0, pages: [], sizeBytes: 0 });
+  const [docContext, setDocContext] = useState(null);
   const [activePageIndex, setActivePageIndex] = useState(0);
   const [isPrivateMode, setIsPrivateMode] = useState(true);
   const [initialPrompt, setInitialPrompt] = useState('');
@@ -51,7 +53,7 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
-  // Annotations (freehand draw, text, redaction, signatures)
+  // Annotations
   const [annotations, setAnnotations] = useState([]);
 
   // Modals state
@@ -60,8 +62,9 @@ export default function App() {
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false);
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
 
-  // Notification toast
+  // Toast Notification
   const [toast, setToast] = useState(null);
 
   const showToast = (message, type = 'success') => {
@@ -117,6 +120,12 @@ export default function App() {
       // Reset history
       setHistory([{ buffer, meta, annotations: [] }]);
       setHistoryIndex(0);
+
+      // Extract real text layers for AI Grounding / RAG
+      extractPdfTextLayers(buffer).then((context) => {
+        setDocContext(context);
+      });
+
       showToast(`Loaded ${name} (${meta.pageCount} pages)`);
     } catch (err) {
       console.error('Failed to load PDF', err);
@@ -130,26 +139,27 @@ export default function App() {
     await loadBuffer(demoBytes, 'Custumu_MSA_Contract.pdf', prompt);
   };
 
-  // Close workspace and return to home
+  // Reset document
   const handleResetDocument = () => {
     if (confirm('Return to home screen? Unexported changes will be cleared.')) {
       setDocBuffer(null);
       setDocName('');
       setDocMeta({ pageCount: 0, pages: [], sizeBytes: 0 });
+      setDocContext(null);
       setHistory([]);
       setHistoryIndex(-1);
     }
   };
 
   // Rotate Page
-  const handleRotatePage = async (pageIdx) => {
+  const handleRotatePage = async (pageIdx, degrees = 90) => {
     try {
-      const updated = await rotatePdfPage(docBuffer, pageIdx, 90);
+      const updated = await rotatePdfPage(docBuffer, pageIdx, degrees);
       const meta = await inspectPdf(updated);
       setDocBuffer(updated);
       setDocMeta(meta);
       pushState(updated, meta);
-      showToast(`Rotated Page ${pageIdx + 1} by 90°`);
+      showToast(`Rotated Page ${pageIdx + 1} by ${degrees}°`);
     } catch (e) {
       console.error(e);
       showToast('Failed to rotate page', 'error');
@@ -168,7 +178,6 @@ export default function App() {
       setDocBuffer(updated);
       setDocMeta(meta);
       setActivePageIndex((prev) => Math.min(prev, meta.pageCount - 1));
-      // filter out annotations for deleted page
       const updatedAnnos = annotations.filter((a) => a.pageIndex !== pageIdx);
       setAnnotations(updatedAnnos);
       pushState(updated, meta, updatedAnnos);
@@ -219,11 +228,10 @@ export default function App() {
     }
   };
 
-  // Add Blank Page
+  // Add Page
   const handleAddPage = async () => {
     try {
       const order = Array.from({ length: docMeta.pageCount }, (_, i) => i);
-      // We can duplicate and clear or append
       const updated = await reorderPdfPages(docBuffer, [...order, order[0]]);
       const meta = await inspectPdf(updated);
       setDocBuffer(updated);
@@ -330,14 +338,12 @@ export default function App() {
 
   // Export Word
   const handleExportWord = () => {
-    const textContent = 
+    const textContent = docContext?.fullText || 
       'CUSTUMU CLOUD SERVICES AGREEMENT\n' +
       'Version 2.4 (Active)\n\n' +
       '1. PARTIES & ENGAGEMENT SCOPE\n' +
       'This Master Services Agreement is entered into by Custumu Document Technologies and Acme Enterprises Inc.\n\n' +
       '2. FINANCIAL SCHEDULE\n' +
-      '• AI Document Workspace: 50 Seats ($2,450.00)\n' +
-      '• High-Speed OCR Pipeline: 10,000 Pages ($500.00)\n' +
       '• Total Monthly Retainer: $2,950.00 / month\n\n' +
       '3. PAYMENT TERMS\n' +
       'Net 30 days. Outstanding balances incur 1.5% interest per month.';
@@ -362,7 +368,7 @@ export default function App() {
     showToast('Downloaded Excel spreadsheet (.xlsx)');
   };
 
-  // Natural language AI action execution
+  // Autonomous AI action execution
   const handleExecuteAiAction = (action) => {
     if (action.type === 'DELETE_PAGE') {
       handleDeletePage(action.pageIndex);
@@ -370,6 +376,8 @@ export default function App() {
       handleApplyCompression(action.targetMb, 'medium');
     } else if (action.type === 'WATERMARK') {
       handleAddWatermark(action.text);
+    } else if (action.type === 'ROTATE_PAGE') {
+      handleRotatePage(action.pageNumber - 1, action.degrees);
     }
   };
 
@@ -403,7 +411,6 @@ export default function App() {
 
       {/* Main Content Area */}
       {!docBuffer ? (
-        // Hero Landing & Dropzone
         <main className="flex-1 flex flex-col justify-center">
           <HeroDropzone
             onFileLoaded={(buf, name, prompt) => loadBuffer(buf, name, prompt)}
@@ -411,12 +418,11 @@ export default function App() {
           />
         </main>
       ) : (
-        // 3-Panel Unified Studio
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Top Quick Tools Ribbon */}
           <div className="h-10 bg-dark-card/70 border-b border-dark-border px-4 flex items-center justify-between text-xs">
             <div className="flex items-center space-x-2">
-              <span className="text-slate-400 text-[11px] font-medium hidden sm:inline">Everyday Tools:</span>
+              <span className="text-slate-400 text-[11px] font-medium hidden sm:inline">Tools:</span>
               <button
                 onClick={() => setIsMergeModalOpen(true)}
                 className="px-2.5 py-1 rounded-md hover:bg-dark-hover text-slate-300 hover:text-white flex items-center gap-1.5 transition text-[11px]"
@@ -466,8 +472,18 @@ export default function App() {
               </button>
             </div>
 
-            <div className="text-[11px] text-slate-400">
-              custumu.com • {isPrivateMode ? '🛡️ Local WASM Engine' : '⚡ Cloud Enclave'}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsApiKeyModalOpen(true)}
+                className="flex items-center space-x-1 text-[11px] text-brand-400 hover:text-brand-300 transition"
+              >
+                <Sparkles className="w-3 h-3" />
+                <span>AI Engine Settings</span>
+              </button>
+              <span className="text-slate-600 hidden md:inline">|</span>
+              <div className="text-[11px] text-slate-400 hidden md:inline">
+                custumu.com • {isPrivateMode ? '🛡️ Local WASM Engine' : '⚡ Cloud Enclave'}
+              </div>
             </div>
           </div>
 
@@ -497,13 +513,16 @@ export default function App() {
               onAddWatermark={handleAddWatermark}
             />
 
-            {/* Right: AI Assistant */}
+            {/* Right: Enterprise AI Copilot */}
             <RightPanelAI
               documentMetadata={docMeta}
+              documentContext={docContext}
               onExecuteAiAction={handleExecuteAiAction}
               onExportExcel={handleExportExcel}
               onExportWord={handleExportWord}
+              onJumpToPage={(targetIdx) => setActivePageIndex(targetIdx)}
               initialPrompt={initialPrompt}
+              onOpenSettings={() => setIsApiKeyModalOpen(true)}
             />
           </div>
         </div>
@@ -542,6 +561,11 @@ export default function App() {
         isOpen={isOcrModalOpen}
         onClose={() => setIsOcrModalOpen(false)}
         activePageIndex={activePageIndex}
+      />
+
+      <ApiKeyModal
+        isOpen={isApiKeyModalOpen}
+        onClose={() => setIsApiKeyModalOpen(false)}
       />
     </div>
   );

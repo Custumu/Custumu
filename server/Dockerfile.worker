@@ -1,0 +1,26 @@
+FROM ubuntu:22.04
+
+# Prevent interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install Node.js, LibreOffice, Ghostscript, and Tesseract OCR
+RUN apt-get update && apt-get install -y \
+    curl \
+    libreoffice \
+    ghostscript \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-spa \
+    poppler-utils \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm install --production
+
+COPY src/ ./src/
+
+CMD ["node", "src/workers/pdfWorker.js"]

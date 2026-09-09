@@ -13,7 +13,6 @@ import OCRModal from './components/modals/OCRModal';
 import PngModal from './components/modals/PngModal';
 
 import {
-  createDemoDocument,
   inspectPdf,
   deletePagesFromPdf,
   rotatePdfPage,
@@ -157,12 +156,6 @@ export default function App() {
       console.error('Failed to load PDF', err);
       showToast('Failed to parse PDF document.', 'error');
     }
-  };
-
-  // Load sample demo agreement only if explicitly requested
-  const handleLoadDemo = async (prompt = '') => {
-    const demoBytes = await createDemoDocument();
-    await loadBuffer(demoBytes, 'Custumu_Sample_Agreement.pdf', prompt);
   };
 
   // Reset document
@@ -459,7 +452,6 @@ export default function App() {
         <main className="flex-1 flex flex-col justify-center">
           <HeroDropzone
             onFileLoaded={(buf, name, prompt) => loadBuffer(buf, name, prompt)}
-            onLoadDemo={(prompt) => handleLoadDemo(prompt)}
           />
         </main>
       ) : (

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { ShieldCheck, Cloud, Download, RotateCcw, RotateCw, FileText,
   Image, ChevronDown, Check, Sparkles, Info } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -46,7 +46,7 @@ export default function Navbar({
           {/* Active File Pill */}
           <div className="hidden md:flex items-center space-x-2 bg-white/80 border border-slate-200 px-3 py-1.5 rounded-full text-xs text-slate-700">
             <FileText className="w-3.5 h-3.5 text-brand-400" />
-            <span className="font-medium truncate max-w-[200px]">{documentName || 'Master_Agreement.pdf'}</span>
+            <span className="font-medium truncate max-w-[200px]">{documentName || 'Document.pdf'}</span>
             <span className="text-slate-500">•</span>
             <span className="text-slate-600">{pageCount} {pageCount === 1 ? 'Page' : 'Pages'}</span>
           </div>

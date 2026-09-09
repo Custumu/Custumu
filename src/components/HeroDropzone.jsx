@@ -1,7 +1,7 @@
-﻿import React, { useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { UploadCloud, FileText, Sparkles, Wand2, Shield, Zap, FileSpreadsheet, Scissors, Minimize2 } from 'lucide-react';
 
-export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
+export default function HeroDropzone({ onFileLoaded }) {
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState('');
@@ -137,18 +137,6 @@ export default function HeroDropzone({ onFileLoaded, onLoadDemo }) {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Demo Document Link */}
-      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <span className="text-xs text-slate-500">Want to test without a file?</span>
-        <button
-          onClick={() => onLoadDemo()}
-          className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-brand-500/10 hover:bg-brand-500/20 text-brand-300 border border-brand-500/30 text-xs font-semibold transition"
-        >
-          <Wand2 className="w-3.5 h-3.5 text-brand-400" />
-          <span>Load Sample 3-Page Agreement Demo</span>
-        </button>
       </div>
 
       {/* Features Grid */}

@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+﻿/** @type {import('tailwindcss').Config} */
 export default {
   content: [
     "./index.html",
@@ -9,31 +9,31 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f0f7ff',
-          100: '#e0effe',
-          200: '#bae0fd',
-          300: '#7cc7fb',
-          400: '#36abf7',
-          500: '#0c8ee9',
-          600: '#0270c7',
-          700: '#0359a1',
-          800: '#074c85',
-          900: '#0c406e',
-          950: '#082949',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#2563eb',
+          600: '#1d4ed8',
+          700: '#1e40af',
+          800: '#1e3a8a',
+          900: '#172554',
+          950: '#0f172a',
         },
         dark: {
-          bg: '#0B0F17',
-          surface: '#111827',
-          card: '#161F30',
-          border: '#1F2E47',
-          hover: '#253552',
+          bg: '#F8FAFC',
+          surface: '#FFFFFF',
+          card: '#F1F5F9',
+          border: '#E2E8F0',
+          hover: '#E2E8F0',
         },
         accent: {
-          cyan: '#06B6D4',
-          indigo: '#6366F1',
-          emerald: '#10B981',
-          amber: '#F59E0B',
-          rose: '#F43F5E',
+          cyan: '#0891b2',
+          indigo: '#4f46e5',
+          emerald: '#059669',
+          amber: '#d97706',
+          rose: '#e11d48',
         }
       },
       fontFamily: {

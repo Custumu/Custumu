@@ -1,55 +1,92 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   * {
-    border-color: #1F2E47;
+    border-color: #E2E8F0;
   }
   
   body {
-    background-color: #0B0F17;
-    color: #F1F5F9;
+    background-color: #F8FAFC;
+    color: #0F172A;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Custom dark scrollbar */
+  /* Clean light scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0B0F17;
+    background: #F8FAFC;
   }
   ::-webkit-scrollbar-thumb {
-    background: #253552;
+    background: #CBD5E1;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #3B82F6;
+    background: #94A3B8;
+  }
+
+  /* Light mode text contrast overrides */
+  .text-white {
+    color: #0F172A;
+  }
+  .text-slate-100 {
+    color: #0F172A;
+  }
+  .text-slate-200 {
+    color: #1E293B;
+  }
+  .text-slate-300 {
+    color: #334155;
+  }
+  .text-slate-400 {
+    color: #64748B;
+  }
+  .hover\:text-white:hover {
+    color: #0F172A;
+  }
+
+  /* Preserve crisp white text on solid buttons */
+  button.bg-brand-500,
+  button.bg-blue-600,
+  button.bg-blue-500,
+  [class*="bg-brand-500"],
+  [class*="bg-blue-600"],
+  .bg-brand-500,
+  .bg-blue-600 {
+    color: #FFFFFF !important;
+  }
+  button.bg-brand-500 *,
+  button.bg-blue-600 *,
+  [class*="bg-brand-500"] *,
+  [class*="bg-blue-600"] * {
+    color: #FFFFFF !important;
   }
 }
 
 @layer utilities {
   .glass-panel {
-    background: rgba(17, 24, 39, 0.75);
+    background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
 
   .glass-card {
-    background: rgba(22, 31, 48, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: #FFFFFF;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
   }
 
   .glow-brand {
-    box-shadow: 0 0 35px -5px rgba(12, 142, 233, 0.35);
+    box-shadow: 0 0 35px -5px rgba(37, 99, 235, 0.15);
   }
 
   .glow-cyan {
-    box-shadow: 0 0 30px -5px rgba(6, 182, 212, 0.3);
+    box-shadow: 0 0 30px -5px rgba(8, 145, 178, 0.12);
   }
 }

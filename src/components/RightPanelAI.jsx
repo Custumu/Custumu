@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Sparkles, 
   Send, 
@@ -13,9 +13,13 @@ import {
   ChevronRight,
   Stamp,
   RotateCw,
-  Cpu
+  Cpu,
+  Loader2
 } from 'lucide-react';
-import { streamEnterpriseAiResponse, getAiConfig } from '../services/enterpriseAi';
+import { streamEnterpriseAiResponse, getAiConfig, fetchSuggestedPrompts } from '../services/enterpriseAi';
+
+// Toggle for Option 1: Set to false to disable automatic suggestions on document load and rely only on Option 2 ("✨ Suggest Prompts" button)
+const AUTO_SUGGEST_ON_LOAD = true;
 
 export default function RightPanelAI({
   documentMetadata,
@@ -35,10 +39,37 @@ export default function RightPanelAI({
     {
       id: 1,
       sender: 'ai',
-      text: `Welcome to **Custumu Enterprise AI Copilot**.\n\nI have indexed your document's text layers across **${documentMetadata?.pageCount || 3} pages**.\n\nAsk any question with verified page citations, or prompt natural language document edits:`,
+      text: `Welcome to **Custumu Enterprise AI Copilot**.\n\nI have indexed your document's text layers across **${documentMetadata?.pageCount || 1} ${documentMetadata?.pageCount === 1 ? 'page' : 'pages'}**.\n\nAsk any question with verified page citations, or prompt natural language document edits:`,
       action: null,
     },
   ]);
+
+  const [prompts, setPrompts] = useState([]);
+  const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
+
+  // Option 2 & Option 1 generator
+  const handleGeneratePrompts = useCallback(async () => {
+    if (isLoadingPrompts) return;
+    setIsLoadingPrompts(true);
+    try {
+      const results = await fetchSuggestedPrompts(
+        documentContext?.fullText || '',
+        documentMetadata?.pageCount || 1
+      );
+      setPrompts(results);
+    } catch (e) {
+      console.error('Failed to generate prompts:', e);
+    } finally {
+      setIsLoadingPrompts(false);
+    }
+  }, [documentContext?.fullText, documentMetadata?.pageCount, isLoadingPrompts]);
+
+  // Option 1: Automatically suggest prompts on document load (if AUTO_SUGGEST_ON_LOAD is true)
+  useEffect(() => {
+    if (AUTO_SUGGEST_ON_LOAD && documentContext?.fullText) {
+      handleGeneratePrompts();
+    }
+  }, [documentContext?.fullText]);
 
   const messagesEndRef = useRef(null);
 
@@ -153,15 +184,6 @@ export default function RightPanelAI({
     });
   };
 
-  const quickPrompts = [
-    { label: 'Payment terms?', prompt: 'What are the payment terms and late interest rate?' },
-    { label: 'Extract tables to Excel', prompt: 'Extract tables into Excel' },
-    { label: 'Remove page 2', prompt: 'Remove page 2 from this document' },
-    { label: 'Summarize SLA', prompt: 'Summarize the Service Level Agreement and uptime' },
-    { label: 'Add watermark DRAFT', prompt: 'Add watermark DRAFT' },
-    { label: 'Compress < 5MB', prompt: 'Compress this document under 5MB' },
-  ];
-
   return (
     <aside className="w-80 lg:w-96 border-l border-slate-200 bg-white/95 backdrop-blur-sm flex flex-col h-full z-10 shrink-0">
       {/* Header */}
@@ -185,14 +207,36 @@ export default function RightPanelAI({
         </div>
       </div>
 
-      {/* Quick Prompt Chips */}
+      {/* Quick Prompt Chips (Option 1 & Option 2) */}
       <div className="px-3 py-2 border-b border-slate-200/60 bg-white/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
-        {quickPrompts.map((qp, i) => (
+        {/* Option 2: On-Demand Suggest / Refresh Button */}
+        <button
+          onClick={handleGeneratePrompts}
+          disabled={isLoadingPrompts || isStreaming}
+          className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 hover:border-brand-400 hover:bg-brand-100 text-brand-700 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+          title="Analyze document with AI and generate smart prompt suggestions"
+        >
+          {isLoadingPrompts ? (
+            <>
+              <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
+              <span>Analyzing document...</span>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-3 h-3 text-brand-600" />
+              <span>{prompts.length > 0 ? 'Refresh Prompts' : 'Suggest Prompts'}</span>
+            </>
+          )}
+        </button>
+
+        {/* Dynamic Prompts List (Only real AI suggestions, zero fallbacks) */}
+        {prompts.map((qp, i) => (
           <button
             key={i}
             onClick={() => handleSend(qp.prompt)}
             disabled={isStreaming}
-            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-300 text-slate-700 transition text-[11px] disabled:opacity-40"
+            title={qp.prompt}
+            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-600 text-slate-700 transition text-[11px] disabled:opacity-40 shrink-0"
           >
             {qp.label}
           </button>

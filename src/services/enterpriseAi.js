@@ -117,3 +117,32 @@ function mapToolCallToAction(toolName, args) {
   return null;
 }
 
+/**
+ * Request AI to analyze document text and suggest 4-5 contextual prompts
+ */
+export async function fetchSuggestedPrompts(documentText = '', pageCount = 1) {
+  try {
+    const endpoint = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+      ? 'http://localhost:5000/api/ai/suggest-prompts'
+      : '/api/ai/suggest-prompts';
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ documentText, pageCount }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data?.prompts) && data.prompts.length > 0) {
+        return data.prompts;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch AI prompt suggestions:', err);
+  }
+
+  return [];
+}
+
+

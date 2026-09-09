@@ -70,29 +70,12 @@ export async function extractPdfTextLayers(arrayBuffer) {
       };
     }
   } catch (err) {
-    console.warn('Native PDF text parsing exception, using structured fallback', err);
+    console.warn('Native PDF text parsing exception', err);
   }
 
-  // Fallback realistic structured content for standard demo agreement
   return {
-    numPages: 3,
-    pages: [
-      {
-        pageNumber: 1,
-        text: 'CUSTUMU CLOUD SERVICES AGREEMENT (CST-2026-8942)\n1. Scope: Custumu Document Technologies & Acme Enterprises Inc.\n2. Financial Terms: Total Monthly Retainer $2,950.00 / month (50 AI seats + 10,000 OCR pages).\n3. Payment Terms: Net 30 days from dispatch. Late fee 1.5% per month.\n4. Termination: 30 days written notice.',
-        wordCount: 45,
-      },
-      {
-        pageNumber: 2,
-        text: 'SERVICE LEVEL AGREEMENT & PRIVACY ENCLAVE\n1. Uptime: 99.95% monthly SLA guarantee.\n2. Zero-Knowledge Private Mode: All document processing runs locally in browser WebAssembly memory with zero network uploads.\n3. Cloud Enclave Mode: Encrypted TLS 1.3 processing with 60-minute automatic purge.',
-        wordCount: 40,
-      },
-      {
-        pageNumber: 3,
-        text: 'EXECUTION & AUTHORIZED SIGNATURES\nProvider: Custumu Technologies [e-Signed]\nClient: Acme Enterprises Inc. [Pending Execution]\nEffective Date: September 9, 2026',
-        wordCount: 22,
-      },
-    ],
-    fullText: 'CUSTUMU CLOUD SERVICES AGREEMENT\nPage 1: Scope, Financial Terms ($2,950/mo), Net 30 payment, 30 days termination.\nPage 2: SLA 99.95% and Zero-Knowledge Private Mode.\nPage 3: Authorized Signatures.',
+    numPages: 1,
+    pages: [],
+    fullText: '',
   };
 }

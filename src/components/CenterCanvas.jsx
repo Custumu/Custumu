@@ -455,6 +455,13 @@ export default function CenterCanvas({
     },
   ], [onOpenSignatureModal, onAddWatermark]);
 
+  const getToolCursor = () => {
+    if (activeTool === 'select') return 'default';
+    if (activeTool === 'text') return 'text';
+    // Slightly larger hollow circle with a soft slate-600 border and no fill
+    return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23475569' stroke-width='1.5'/%3E%3C/svg%3E") 16 16, auto`;
+  };
+
   return (
     <main className="flex-1 flex flex-col bg-slate-100/70 h-full overflow-hidden relative min-w-0">
       {/* Top Floating Action Toolbar */}
@@ -616,11 +623,12 @@ export default function CenterCanvas({
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               className={`absolute inset-0 z-10 ${
-                activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'
+                activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto'
               }`}
               style={{
                 width: `${canvasDimensions.width}px`,
                 height: `${canvasDimensions.height}px`,
+                cursor: getToolCursor(),
               }}
             />
 

@@ -8,20 +8,23 @@ import {
   Trash2, 
   Minimize2, 
   FileText, 
-  ShieldCheck, 
   ExternalLink,
-  ChevronRight,
   Stamp,
   RotateCw,
-  Cpu,
   Loader2,
+  Split,
+  ArrowUpDown,
+  CheckCircle2,
+  Zap,
+  Download,
+  Layers,
   Database,
   SquareDashedMousePointer,
   ArrowUp
 } from 'lucide-react';
 import { streamEnterpriseAiResponse, getAiConfig, fetchSuggestedPrompts } from '../services/enterpriseAi';
 
-// Toggle for Option 1: Set to false to disable automatic suggestions on document load and rely only on Option 2 ("✨ Suggest Prompts" button)
+// Toggle for Option 1: Set to false to disable automatic suggestions on document load
 const AUTO_SUGGEST_ON_LOAD = true;
 
 export default function RightPanelAI({
@@ -37,6 +40,8 @@ export default function RightPanelAI({
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedText, setStreamedText] = useState('');
   const [aiConfig, setAiConfig] = useState(getAiConfig());
+  const [executedActionIds, setExecutedActionIds] = useState(new Set());
+  const [executingActionId, setExecutingActionId] = useState(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -50,7 +55,7 @@ export default function RightPanelAI({
     {
       id: 1,
       sender: 'ai',
-      text: `Welcome to **Custumu Enterprise AI Copilot**.\n\nI have indexed your document's text layers across **${documentMetadata?.pageCount || 1} ${documentMetadata?.pageCount === 1 ? 'page' : 'pages'}**.\n\nAsk any question with verified page citations, or prompt natural language document edits:`,
+      text: `Welcome to **Custumu Enterprise AI Copilot**.\n\nI have indexed your document's text layers across **${documentMetadata?.pageCount || 1} ${documentMetadata?.pageCount === 1 ? 'page' : 'pages'}**.\n\nYou can ask questions about the content, or simply tell me how to edit your PDF (e.g. *"split this document"*, *"delete page 2"*, *"rotate page 1"*).`,
       action: null,
     },
   ]);
@@ -60,7 +65,7 @@ export default function RightPanelAI({
 
   const hasDocText = Boolean(documentContext?.fullText && documentContext.fullText.trim().length >= 20);
 
-  // Option 2 & Option 1 generator (only if document has text)
+  // Smart prompt suggestions generator
   const handleGeneratePrompts = useCallback(async () => {
     if (!hasDocText || isLoadingPrompts) return;
     setIsLoadingPrompts(true);
@@ -77,7 +82,6 @@ export default function RightPanelAI({
     }
   }, [documentContext?.fullText, documentMetadata?.pageCount, isLoadingPrompts, hasDocText]);
 
-  // Option 1: Automatically suggest prompts on document load only if document has real text
   useEffect(() => {
     if (AUTO_SUGGEST_ON_LOAD && hasDocText) {
       handleGeneratePrompts();
@@ -126,6 +130,7 @@ export default function RightPanelAI({
         prompt: query,
         conversationHistory: messages,
         documentContext,
+        documentMetadata,
         onToken: (token) => {
           accumulatedText += token;
           setStreamedText(accumulatedText);
@@ -142,11 +147,6 @@ export default function RightPanelAI({
       setMessages((prev) => [...prev, aiMessage]);
       setStreamedText('');
       setIsStreaming(false);
-
-      // Auto-trigger actions or prepare callbacks
-      if (result.action) {
-        // We present the action button for user confirmation
-      }
     } catch (err) {
       console.error('Streaming error', err);
       setMessages((prev) => [
@@ -162,14 +162,22 @@ export default function RightPanelAI({
     }
   };
 
-  const handleActionClick = (action) => {
-    if (!action) return;
-    if (action.type === 'EXTRACT_TABLES') {
-      onExportExcel(action.tables);
-    } else if (action.type === 'EXPORT_WORD') {
-      onExportWord();
-    } else {
-      onExecuteAiAction(action);
+  const handleActionClick = async (action, messageId) => {
+    if (!action || executingActionId) return;
+    setExecutingActionId(messageId);
+    try {
+      if (action.type === 'EXTRACT_TABLES') {
+        onExportExcel(action.tables);
+      } else if (action.type === 'EXPORT_WORD') {
+        onExportWord();
+      } else {
+        await onExecuteAiAction(action);
+      }
+      setExecutedActionIds((prev) => new Set(prev).add(messageId));
+    } catch (err) {
+      console.error('Failed to execute action:', err);
+    } finally {
+      setExecutingActionId(null);
     }
   };
 
@@ -185,7 +193,7 @@ export default function RightPanelAI({
           <button
             key={index}
             onClick={() => onJumpToPage(pageNum - 1)}
-            className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 mx-0.5 rounded bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/40 text-[11px] font-mono font-semibold transition"
+            className="inline-flex items-center space-x-0.5 px-1.5 py-0.5 mx-0.5 rounded bg-brand-500/20 hover:bg-brand-500/30 text-brand-600 border border-brand-500/30 text-[11px] font-mono font-semibold transition cursor-pointer"
             title={`Navigate to Page ${pageNum}`}
           >
             <span>p.{pageNum}</span>
@@ -195,6 +203,152 @@ export default function RightPanelAI({
       }
       return <span key={index}>{part}</span>;
     });
+  };
+
+  // Render Visually Rich 1-Click Action Card
+  const renderActionCard = (action, messageId) => {
+    if (!action) return null;
+
+    const isExecuted = executedActionIds.has(messageId);
+    const isExecuting = executingActionId === messageId;
+
+    let icon = <Zap className="w-3.5 h-3.5 text-amber-500" />;
+    let title = 'Document Action';
+    let buttonLabel = 'Apply';
+    let badge = null;
+
+    if (action.type === 'SPLIT_PDF') {
+      icon = <Split className="w-3.5 h-3.5 text-brand-500" />;
+      title = 'Split Document';
+      buttonLabel = action.mode === 'all_pages' 
+        ? 'Split All Pages' 
+        : action.pageNumbers?.length 
+        ? `Extract Page ${action.pageNumbers.join(', ')}`
+        : 'Split PDF';
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 font-medium">
+          {action.mode === 'all_pages' ? 'All Individual Pages' : 'Custom Extract'}
+        </span>
+      );
+    } else if (action.type === 'DELETE_PAGES' || action.type === 'DELETE_PAGE') {
+      icon = <Trash2 className="w-3.5 h-3.5 text-rose-500" />;
+      title = 'Delete Page(s)';
+      const pNums = action.pageNumbers?.length ? action.pageNumbers : [action.pageNumber || 1];
+      buttonLabel = `Delete Page ${pNums.join(', ')}`;
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200/80 font-medium">
+          Target: Page {pNums.join(', ')}
+        </span>
+      );
+    } else if (action.type === 'ROTATE_PAGES' || action.type === 'ROTATE_PAGE') {
+      icon = <RotateCw className="w-3.5 h-3.5 text-cyan-600" />;
+      title = 'Rotate Page(s)';
+      const pNums = action.pageNumbers?.length ? action.pageNumbers.join(', ') : 'All Pages';
+      buttonLabel = `Rotate by ${action.degrees || 90}°`;
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-cyan-50 text-cyan-700 border border-cyan-200/80 font-medium">
+          {action.degrees || 90}° Clockwise ({pNums})
+        </span>
+      );
+    } else if (action.type === 'REORDER_PAGES') {
+      icon = <ArrowUpDown className="w-3.5 h-3.5 text-indigo-500" />;
+      title = 'Reorder Pages';
+      buttonLabel = 'Apply New Order';
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-mono font-medium">
+          Order: {action.newOrder?.join(' → ')}
+        </span>
+      );
+    } else if (action.type === 'WATERMARK') {
+      icon = <Stamp className="w-3.5 h-3.5 text-amber-600" />;
+      title = 'Stamp Watermark';
+      buttonLabel = `Stamp "${action.text || 'CONFIDENTIAL'}"`;
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/80 font-medium">
+          "{action.text}"
+        </span>
+      );
+    } else if (action.type === 'COMPRESS') {
+      icon = <Minimize2 className="w-3.5 h-3.5 text-amber-500" />;
+      title = 'Compress & Optimize';
+      buttonLabel = `Compress (< ${action.targetMb || 5} MB)`;
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200/80 font-medium">
+          Target: &lt; {action.targetMb || 5} MB
+        </span>
+      );
+    } else if (action.type === 'EXPORT') {
+      icon = <Download className="w-3.5 h-3.5 text-blue-500" />;
+      title = 'Export Document';
+      buttonLabel = `Download ${action.format?.toUpperCase()}`;
+      badge = (
+        <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 font-medium">
+          Format: {action.format?.toUpperCase()}
+        </span>
+      );
+    } else if (action.type === 'EXTRACT_TABLES') {
+      icon = <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />;
+      title = 'Extract Data Tables';
+      buttonLabel = 'Download Excel (.xlsx)';
+    }
+
+    return (
+      <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/90 p-3 shadow-xs">
+        {/* Card Header */}
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+          <div className="flex items-center space-x-2">
+            <div className="p-1 rounded-md bg-white border border-slate-200 shadow-2xs">
+              {icon}
+            </div>
+            <div>
+              <div className="text-[11px] font-bold text-slate-800 tracking-tight">{title}</div>
+              <div className="text-[10px] text-slate-500">Autonomous Action Ready</div>
+            </div>
+          </div>
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(252,181,0,0.15)] text-amber-950 border border-[rgba(252,181,0,0.35)]">
+            1-Click Action
+          </span>
+        </div>
+
+        {/* Action Summary */}
+        <p className="text-[11px] text-slate-600 mb-2.5 font-medium leading-relaxed">
+          {action.summary || 'Click below to execute this change directly on your document.'}
+        </p>
+
+        {/* Details Badge */}
+        {badge && (
+          <div className="flex flex-wrap items-center gap-1.5 mb-3">
+            {badge}
+          </div>
+        )}
+
+        {/* 1-Click Action Button */}
+        {isExecuted ? (
+          <div className="w-full py-2 px-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold flex items-center justify-center space-x-1.5 shadow-2xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span>Executed Successfully</span>
+          </div>
+        ) : (
+          <button
+            onClick={() => handleActionClick(action, messageId)}
+            disabled={isExecuting}
+            className="w-full py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+          >
+            {isExecuting ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                <span>Executing action...</span>
+              </>
+            ) : (
+              <>
+                <Zap className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span>Execute: {buttonLabel}</span>
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -208,21 +362,18 @@ export default function RightPanelAI({
           <div>
             <div className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
               Enterprise AI Copilot
-
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* Quick Prompt Chips (Option 1 & Option 2) - Only show if PDF contains real text */}
+      {/* Quick Prompt Chips - Only show if PDF contains real text */}
       {hasDocText && (
         <div className="px-3 py-2 border-b border-slate-200/60 bg-white/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
-          {/* Option 2: On-Demand Suggest / Refresh Button */}
           <button
             onClick={handleGeneratePrompts}
             disabled={isLoadingPrompts || isStreaming}
-            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 hover:border-brand-400 hover:bg-brand-100 text-brand-700 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50"
+            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 hover:border-brand-400 hover:bg-brand-100 text-brand-700 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
             title="Analyze document with AI and generate smart prompt suggestions"
           >
             {isLoadingPrompts ? (
@@ -238,14 +389,13 @@ export default function RightPanelAI({
             )}
           </button>
 
-          {/* Dynamic Prompts List (Only real AI suggestions, zero fallbacks) */}
           {prompts.map((qp, i) => (
             <button
               key={i}
               onClick={() => handleSend(qp.prompt)}
               disabled={isStreaming}
               title={qp.prompt}
-              className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-600 text-slate-700 transition text-[11px] disabled:opacity-40 shrink-0"
+              className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-600 text-slate-700 transition text-[11px] disabled:opacity-40 shrink-0 cursor-pointer"
             >
               {qp.label}
             </button>
@@ -285,74 +435,8 @@ export default function RightPanelAI({
                 {renderMessageTextWithCitations(m.text)}
               </div>
 
-              {/* Action Button Card */}
-              {m.action && (
-                <div className="mt-3 pt-2.5 border-t border-slate-200/80">
-                  <div className="text-[10px] uppercase font-bold text-brand-400 tracking-wider mb-1.5 flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" /> Autonomous Action Ready
-                  </div>
-
-                  {m.action.type === 'DELETE_PAGE' && (
-                    <button
-                      onClick={() => handleActionClick(m.action)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 font-semibold flex items-center justify-center space-x-1.5 transition"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Execute: Delete Page {m.action.pageNumber}</span>
-                    </button>
-                  )}
-
-                  {m.action.type === 'EXTRACT_TABLES' && (
-                    <button
-                      onClick={() => handleActionClick(m.action)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-semibold flex items-center justify-center space-x-1.5 transition"
-                    >
-                      <FileSpreadsheet className="w-3.5 h-3.5" />
-                      <span>Download Extracted Excel (.xlsx)</span>
-                    </button>
-                  )}
-
-                  {m.action.type === 'COMPRESS' && (
-                    <button
-                      onClick={() => handleActionClick(m.action)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 font-semibold flex items-center justify-center space-x-1.5 transition"
-                    >
-                      <Minimize2 className="w-3.5 h-3.5" />
-                      <span>Apply Compression (&lt; {m.action.targetMb} MB)</span>
-                    </button>
-                  )}
-
-                  {m.action.type === 'WATERMARK' && (
-                    <button
-                      onClick={() => handleActionClick(m.action)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-brand-500/20 hover:bg-brand-500/30 text-brand-300 border border-brand-500/40 font-semibold flex items-center justify-center space-x-1.5 transition"
-                    >
-                      <Stamp className="w-3.5 h-3.5" />
-                      <span>Stamp Watermark "{m.action.text}"</span>
-                    </button>
-                  )}
-
-                  {m.action.type === 'EXPORT_WORD' && (
-                    <button
-                      onClick={() => handleActionClick(m.action)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 font-semibold flex items-center justify-center space-x-1.5 transition"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                      <span>Download Word (.doc)</span>
-                    </button>
-                  )}
-
-                  {m.action.type === 'ROTATE_PAGE' && (
-                    <button
-                      onClick={() => handleActionClick(m.action)}
-                      className="w-full py-1.5 px-3 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 font-semibold flex items-center justify-center space-x-1.5 transition"
-                    >
-                      <RotateCw className="w-3.5 h-3.5" />
-                      <span>Rotate Page {m.action.pageNumber} by {m.action.degrees}°</span>
-                    </button>
-                  )}
-                </div>
-              )}
+              {/* Visually Rich 1-Click Action Card */}
+              {m.action && renderActionCard(m.action, m.id)}
             </div>
           </div>
         ))}
@@ -362,7 +446,7 @@ export default function RightPanelAI({
           <div className="flex flex-col items-start animate-fade-in">
             <div className="flex items-center space-x-1.5 mb-1 text-[10px] text-brand-400">
               <Bot className="w-3 h-3 animate-pulse" />
-              <span>Streaming response...</span>
+              <span>Custumu Copilot is thinking...</span>
             </div>
 
             <div className="p-3 rounded-2xl max-w-[92%] leading-relaxed bg-white border border-brand-500/40 text-slate-800 rounded-tl-sm shadow-md shadow-brand-500/5">
@@ -408,13 +492,31 @@ export default function RightPanelAI({
 
           <div className="flex items-center justify-between pt-2 mt-1">
             <div className="flex items-center gap-2">
-
+              <button
+                type="button"
+                title="Ground in document data"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded transition cursor-pointer"
+              >
+                <Database className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInput((prev) => (prev.startsWith('/edit') ? prev : `/edit ${prev}`.trimStart()));
+                  textareaRef.current?.focus();
+                }}
+                title="Edit document"
+                className="flex items-center gap-1.5 px-1.5 py-0.5 rounded text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <SquareDashedMousePointer className="w-3.5 h-3.5" />
+                <span>Edit</span>
+              </button>
             </div>
 
             <button
               type="submit"
               disabled={!input.trim() || isStreaming}
-              className="w-7 h-7 rounded-full bg-brand-600 hover:bg-brand-700 disabled:opacity-30 disabled:hover:bg-brand-600 text-white flex items-center justify-center transition shadow-xs shrink-0"
+              className="w-7 h-7 rounded-full bg-brand-600 hover:bg-brand-700 disabled:opacity-30 disabled:hover:bg-brand-600 text-white flex items-center justify-center transition shadow-xs shrink-0 cursor-pointer"
               title="Send message"
             >
               <ArrowUp className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -425,4 +527,3 @@ export default function RightPanelAI({
     </aside>
   );
 }
-

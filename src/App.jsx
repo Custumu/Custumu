@@ -378,15 +378,129 @@ export default function App() {
   };
 
   // Autonomous AI action execution
-  const handleExecuteAiAction = (action) => {
-    if (action.type === 'DELETE_PAGE') {
-      handleDeletePage(action.pageIndex);
-    } else if (action.type === 'COMPRESS') {
-      handleApplyCompression(action.targetMb, 'medium');
+  const handleExecuteAiAction = async (action) => {
+    if (!action) return;
+
+    if (action.type === 'SPLIT_PDF') {
+      const totalP = docMeta?.pageCount || 1;
+      let ranges = [];
+
+      if (action.mode === 'all_pages' || (!action.pageNumbers?.length && !action.ranges?.length)) {
+        // Split every single page into its own PDF file
+        ranges = Array.from({ length: totalP }, (_, i) => ({
+          name: `${(docName || 'document').replace(/\.pdf$/i, '')}_page_${i + 1}.pdf`,
+          pageIndices: [i],
+        }));
+      } else if (action.ranges && action.ranges.length > 0) {
+        ranges = action.ranges.map((r, idx) => ({
+          name: r.name || `part_${idx + 1}.pdf`,
+          pageIndices: (r.page_numbers || r.pageNumbers || [])
+            .map((p) => p - 1)
+            .filter((p) => p >= 0 && p < totalP),
+        }));
+      } else if (action.pageNumbers && action.pageNumbers.length > 0) {
+        const indices = action.pageNumbers
+          .map((p) => p - 1)
+          .filter((p) => p >= 0 && p < totalP);
+        ranges = [
+          {
+            name: `${(docName || 'document').replace(/\.pdf$/i, '')}_extracted.pdf`,
+            pageIndices: indices,
+          },
+        ];
+      }
+
+      if (ranges.length > 0) {
+        await handleApplySplit(ranges);
+      } else {
+        showToast('No valid pages found to split.', 'error');
+      }
+    } else if (action.type === 'DELETE_PAGES' || action.type === 'DELETE_PAGE') {
+      const pageNumbers = action.pageNumbers || (action.pageNumber ? [action.pageNumber] : []);
+      if (!pageNumbers.length) return;
+      if (docMeta.pageCount <= pageNumbers.length) {
+        showToast('Cannot delete all pages from document.', 'error');
+        return;
+      }
+      const pageIndices = pageNumbers
+        .map((p) => p - 1)
+        .filter((p) => p >= 0 && p < docMeta.pageCount);
+      try {
+        const updated = await deletePagesFromPdf(docBuffer, pageIndices);
+        const meta = await inspectPdf(updated);
+        setDocBuffer(updated);
+        setDocMeta(meta);
+        setActivePageIndex((prev) => Math.min(prev, meta.pageCount - 1));
+        const updatedAnnos = annotations.filter((a) => !pageIndices.includes(a.pageIndex));
+        setAnnotations(updatedAnnos);
+        pushState(updated, meta, updatedAnnos);
+        showToast(
+          pageNumbers.length === 1
+            ? `Deleted Page ${pageNumbers[0]}`
+            : `Deleted Pages ${pageNumbers.join(', ')}`
+        );
+      } catch (e) {
+        console.error(e);
+        showToast('Failed to delete page(s)', 'error');
+      }
+    } else if (action.type === 'ROTATE_PAGES' || action.type === 'ROTATE_PAGE') {
+      const pageNumbers = action.pageNumbers || (action.pageNumber ? [action.pageNumber] : []);
+      const degrees = action.degrees || 90;
+      const totalP = docMeta?.pageCount || 1;
+      const targetIndices = pageNumbers.length > 0
+        ? pageNumbers.map((p) => p - 1).filter((p) => p >= 0 && p < totalP)
+        : Array.from({ length: totalP }, (_, i) => i);
+
+      try {
+        let currentBuf = docBuffer;
+        for (const idx of targetIndices) {
+          currentBuf = await rotatePdfPage(currentBuf, idx, degrees);
+        }
+        const meta = await inspectPdf(currentBuf);
+        setDocBuffer(currentBuf);
+        setDocMeta(meta);
+        pushState(currentBuf, meta);
+        showToast(
+          targetIndices.length === 1
+            ? `Rotated Page ${targetIndices[0] + 1} by ${degrees}°`
+            : `Rotated ${targetIndices.length} pages by ${degrees}°`
+        );
+      } catch (e) {
+        console.error(e);
+        showToast('Failed to rotate pages', 'error');
+      }
+    } else if (action.type === 'REORDER_PAGES') {
+      const newOrder = action.newOrder || [];
+      const totalP = docMeta?.pageCount || 1;
+      const orderIndices = newOrder.map((p) => p - 1).filter((p) => p >= 0 && p < totalP);
+      if (orderIndices.length !== totalP) {
+        showToast('Invalid page sequence for reordering.', 'error');
+        return;
+      }
+      try {
+        const updated = await reorderPdfPages(docBuffer, orderIndices);
+        const meta = await inspectPdf(updated);
+        setDocBuffer(updated);
+        setDocMeta(meta);
+        pushState(updated, meta);
+        showToast('Reordered document pages successfully');
+      } catch (e) {
+        console.error(e);
+        showToast('Failed to reorder pages', 'error');
+      }
     } else if (action.type === 'WATERMARK') {
       handleAddWatermark(action.text);
-    } else if (action.type === 'ROTATE_PAGE') {
-      handleRotatePage(action.pageNumber - 1, action.degrees);
+    } else if (action.type === 'COMPRESS') {
+      handleApplyCompression(action.targetMb || 5, action.quality || 'medium');
+    } else if (action.type === 'EXPORT') {
+      if (action.format === 'word') handleExportWord();
+      else if (action.format === 'excel') handleExportExcel();
+      else if (action.format === 'png') handleExportPng({ scope: 'all' });
+      else handleExportPdf();
+    } else if (action.type === 'EXTRACT_TABLES') {
+      handleExportExcel(action.tables);
+    } else if (action.type === 'EXPORT_WORD') {
+      handleExportWord();
     }
   };
 

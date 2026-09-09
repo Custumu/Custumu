@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   Sparkles, 
   Send, 
@@ -165,7 +165,7 @@ export default function RightPanelAI({
   ];
 
   return (
-    <aside className="w-80 lg:w-96 border-l border-slate-200 bg-white/90 backdrop-blur-sm flex flex-col h-[calc(100vh-4rem)] z-10 shrink-0">
+    <aside className="w-80 lg:w-96 border-l border-slate-200 bg-white/95 backdrop-blur-sm flex flex-col h-full z-10 shrink-0">
       {/* Header */}
       <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -173,9 +173,9 @@ export default function RightPanelAI({
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <div>
-            <div className="font-semibold text-xs text-white flex items-center gap-1.5">
+            <div className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
               Enterprise AI Copilot
-              <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-emerald-500/20 text-emerald-600 border border-emerald-500/30">
                 RAG Active
               </span>
             </div>

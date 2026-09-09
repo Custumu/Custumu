@@ -37,11 +37,7 @@ export default function Navbar({
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
                 Custumu
-                <span className="text-[10px] uppercase font-semibold px-1.5 py-0.5 rounded bg-brand-500/20 text-brand-400 border border-brand-500/30">
-                  AI Studio
-                </span>
               </span>
-              <span className="text-[10px] text-slate-600 -mt-1 hidden sm:inline">custumu.com</span>
             </div>
           </div>
 

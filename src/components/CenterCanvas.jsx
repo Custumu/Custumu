@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { 
   MousePointer, 
   Type, 
@@ -11,7 +11,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Lock,
-  Loader2
+  Loader2,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { loadPdfDoc, renderPdfPage } from '../services/pdfRenderer';
 
@@ -25,6 +27,7 @@ export default function CenterCanvas({
   setAnnotations,
   onAddWatermark
 }) {
+  const viewportRef = useRef(null);
   const pdfCanvasRef = useRef(null);
   const annotationCanvasRef = useRef(null);
   const [zoom, setZoom] = useState(100);
@@ -35,7 +38,13 @@ export default function CenterCanvas({
   const [textInputPos, setTextInputPos] = useState(null);
   const [textInputValue, setTextInputValue] = useState('');
   const [isRenderingPage, setIsRenderingPage] = useState(false);
-  const [canvasDimensions, setCanvasDimensions] = useState({ width: 612, height: 792 });
+  const [canvasDimensions, setCanvasDimensions] = useState({
+    width: 612,
+    height: 792,
+    baseWidth: 612,
+    baseHeight: 792,
+    dpr: 1
+  });
   const [canvasRenderSuccess, setCanvasRenderSuccess] = useState(false);
 
   // Create real Blob URL for uploaded PDF
@@ -58,7 +67,7 @@ export default function CenterCanvas({
     };
   }, [blobUrl]);
 
-  // 1. Render the REAL uploaded PDF page onto pdfCanvasRef
+  // 1. Render the REAL uploaded PDF page onto pdfCanvasRef with Retina DPR resolution
   useEffect(() => {
     let isCancelled = false;
 
@@ -82,10 +91,13 @@ export default function CenterCanvas({
             setCanvasDimensions(dimensions);
             setCanvasRenderSuccess(true);
 
-            // Synchronize the overlay annotation canvas dimensions
+            // Synchronize the overlay annotation canvas physical resolution and CSS dimensions
             if (annotationCanvasRef.current) {
-              annotationCanvasRef.current.width = dimensions.width;
-              annotationCanvasRef.current.height = dimensions.height;
+              const dpr = dimensions.dpr || 1;
+              annotationCanvasRef.current.width = Math.floor(dimensions.width * dpr);
+              annotationCanvasRef.current.height = Math.floor(dimensions.height * dpr);
+              annotationCanvasRef.current.style.width = `${dimensions.width}px`;
+              annotationCanvasRef.current.style.height = `${dimensions.height}px`;
             }
           }
         }
@@ -112,37 +124,43 @@ export default function CenterCanvas({
     const ctx = canvas.getContext('2d');
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const pageAnnotations = annotations.filter(a => a.pageIndex === activePageIndex);
+    const baseWidth = canvasDimensions.baseWidth || 612;
+    const baseHeight = canvasDimensions.baseHeight || 792;
+    const scaleX = canvas.width / baseWidth;
+    const scaleY = canvas.height / baseHeight;
+
+    const pageAnnotations = annotations.filter((a) => a.pageIndex === activePageIndex);
 
     pageAnnotations.forEach((anno) => {
       if (anno.type === 'draw' || anno.type === 'highlight') {
         ctx.beginPath();
         ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : (anno.color || '#0284C7');
-        ctx.lineWidth = anno.type === 'highlight' ? 16 : (anno.width || 3);
+        ctx.lineWidth = (anno.type === 'highlight' ? 16 : (anno.width || 3)) * scaleX;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
         anno.points.forEach((pt, idx) => {
-          if (idx === 0) ctx.moveTo(pt.x, pt.y);
-          else ctx.lineTo(pt.x, pt.y);
+          const px = pt.x * scaleX;
+          const py = pt.y * scaleY;
+          if (idx === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
         });
         ctx.stroke();
       } else if (anno.type === 'redact') {
         ctx.fillStyle = '#000000';
-        ctx.fillRect(anno.x, anno.y, anno.width, anno.height);
+        ctx.fillRect(anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
       } else if (anno.type === 'text') {
         ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 14px Inter, sans-serif';
-        ctx.fillText(anno.text, anno.x, anno.y);
+        ctx.font = `bold ${Math.round(14 * scaleX)}px Inter, sans-serif`;
+        ctx.fillText(anno.text, anno.x * scaleX, anno.y * scaleY);
       } else if (anno.type === 'signature') {
         const img = new Image();
         img.src = anno.dataUrl;
-        img.onload = () => {
-          ctx.drawImage(img, anno.x, anno.y, anno.width, anno.height);
+        const drawSig = () => {
+          ctx.drawImage(img, anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
         };
-        if (img.complete) {
-          ctx.drawImage(img, anno.x, anno.y, anno.width, anno.height);
-        }
+        img.onload = drawSig;
+        if (img.complete) drawSig();
       }
     });
   }, [activePageIndex, annotations, canvasDimensions]);
@@ -151,8 +169,10 @@ export default function CenterCanvas({
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const baseWidth = canvasDimensions.baseWidth || 612;
+    const baseHeight = canvasDimensions.baseHeight || 792;
+    const x = ((e.clientX - rect.left) / rect.width) * baseWidth;
+    const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       setIsDrawing(true);
@@ -161,7 +181,7 @@ export default function CenterCanvas({
       setIsDrawing(true);
       setStartPos({ x, y });
     } else if (activeTool === 'text') {
-      setTextInputPos({ x, y, clientX: e.clientX, clientY: e.clientY });
+      setTextInputPos({ x, y });
     }
   };
 
@@ -170,21 +190,25 @@ export default function CenterCanvas({
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const baseWidth = canvasDimensions.baseWidth || 612;
+    const baseHeight = canvasDimensions.baseHeight || 792;
+    const x = ((e.clientX - rect.left) / rect.width) * baseWidth;
+    const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       setCurrentPath((prev) => [...prev, { x, y }]);
 
       const ctx = canvas.getContext('2d');
+      const scaleX = canvas.width / baseWidth;
+      const scaleY = canvas.height / baseHeight;
       ctx.beginPath();
       ctx.strokeStyle = activeTool === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : '#0284C7';
-      ctx.lineWidth = activeTool === 'highlight' ? 16 : 3;
+      ctx.lineWidth = (activeTool === 'highlight' ? 16 : 3) * scaleX;
       ctx.lineCap = 'round';
       const last = currentPath[currentPath.length - 1];
       if (last) {
-        ctx.moveTo(last.x, last.y);
-        ctx.lineTo(x, y);
+        ctx.moveTo(last.x * scaleX, last.y * scaleY);
+        ctx.lineTo(x * scaleX, y * scaleY);
         ctx.stroke();
       }
     }
@@ -196,8 +220,10 @@ export default function CenterCanvas({
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const x = (e.clientX - rect.left) * (canvas.width / rect.width);
-    const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+    const baseWidth = canvasDimensions.baseWidth || 612;
+    const baseHeight = canvasDimensions.baseHeight || 792;
+    const x = ((e.clientX - rect.left) / rect.width) * baseWidth;
+    const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       if (currentPath.length > 1) {
@@ -217,7 +243,7 @@ export default function CenterCanvas({
       const startX = Math.min(x, startPos.x);
       const startY = Math.min(y, startPos.y);
 
-      if (width > 8 && height > 8) {
+      if (width > 6 && height > 6) {
         setAnnotations((prev) => [
           ...prev,
           {
@@ -251,17 +277,37 @@ export default function CenterCanvas({
     setTextInputValue('');
   };
 
+  const handleFitWidth = () => {
+    if (!viewportRef.current || !canvasDimensions.baseWidth) return;
+    const padding = 64;
+    const availableWidth = viewportRef.current.clientWidth - padding;
+    if (availableWidth > 150) {
+      const targetZoom = Math.round((availableWidth / canvasDimensions.baseWidth) * 100);
+      setZoom(Math.max(40, Math.min(200, targetZoom)));
+    }
+  };
+
+  const handleFitPage = () => {
+    if (!viewportRef.current || !canvasDimensions.baseHeight) return;
+    const padding = 64;
+    const availableHeight = viewportRef.current.clientHeight - padding;
+    if (availableHeight > 150) {
+      const targetZoom = Math.round((availableHeight / canvasDimensions.baseHeight) * 100);
+      setZoom(Math.max(40, Math.min(200, targetZoom)));
+    }
+  };
+
   return (
-    <main className="flex-1 flex flex-col bg-slate-50 h-[calc(100vh-4rem)] overflow-hidden relative">
+    <main className="flex-1 flex flex-col bg-slate-100/70 h-full overflow-hidden relative min-w-0">
       {/* Top Floating Action Toolbar */}
-      <div className="h-12 border-b border-slate-200 bg-white/90 backdrop-blur-md px-4 flex items-center justify-between z-20">
-        {/* Tools */}
+      <div className="h-11 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0 shadow-xs">
+        {/* Left: Interactive Tools */}
         <div className="flex items-center space-x-1">
           <button
             onClick={() => setActiveTool('select')}
-            className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
               activeTool === 'select'
-                ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                ? 'bg-brand-50 text-brand-600 border border-brand-200 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Select & Cursor"
@@ -272,9 +318,9 @@ export default function CenterCanvas({
 
           <button
             onClick={() => setActiveTool('text')}
-            className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
               activeTool === 'text'
-                ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                ? 'bg-brand-50 text-brand-600 border border-brand-200 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Add Text Overlay"
@@ -285,9 +331,9 @@ export default function CenterCanvas({
 
           <button
             onClick={() => setActiveTool('draw')}
-            className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
               activeTool === 'draw'
-                ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30'
+                ? 'bg-brand-50 text-brand-600 border border-brand-200 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Freehand Pen"
@@ -298,9 +344,9 @@ export default function CenterCanvas({
 
           <button
             onClick={() => setActiveTool('highlight')}
-            className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
               activeTool === 'highlight'
-                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                ? 'bg-amber-50 text-amber-600 border border-amber-200 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Highlighter"
@@ -311,9 +357,9 @@ export default function CenterCanvas({
 
           <button
             onClick={() => setActiveTool('redact')}
-            className={`p-2 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition ${
+            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
               activeTool === 'redact'
-                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                ? 'bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
             }`}
             title="Redact / Blackout Box"
@@ -322,11 +368,11 @@ export default function CenterCanvas({
             <span className="hidden sm:inline">Redact</span>
           </button>
 
-          <div className="h-4 w-px bg-dark-border mx-1"></div>
+          <div className="h-4 w-px bg-slate-200 mx-1.5"></div>
 
           <button
             onClick={onOpenSignatureModal}
-            className="p-2 rounded-lg text-xs font-medium text-emerald-400 hover:bg-emerald-500/10 border border-emerald-500/20 flex items-center space-x-1.5 transition"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-200 flex items-center space-x-1.5 transition cursor-pointer shadow-2xs"
             title="e-Signature Pad"
           >
             <Stamp className="w-3.5 h-3.5" />
@@ -335,7 +381,7 @@ export default function CenterCanvas({
 
           <button
             onClick={() => onAddWatermark('CONFIDENTIAL')}
-            className="p-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-200 hover:bg-slate-100 flex items-center space-x-1.5 transition"
+            className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 transition cursor-pointer"
             title="Watermark Document"
           >
             <Lock className="w-3.5 h-3.5" />
@@ -343,131 +389,155 @@ export default function CenterCanvas({
           </button>
         </div>
 
-        {/* Zoom & Page Navigation */}
+        {/* Right: Page Navigation & Zoom Controls */}
         <div className="flex items-center space-x-2">
           {/* Page controls */}
-          <div className="flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-700">
+          <div className="flex items-center space-x-1 bg-white px-2 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">
             <button
               onClick={() => setActivePageIndex(Math.max(0, activePageIndex - 1))}
               disabled={activePageIndex === 0}
-              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30"
+              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+              title="Previous Page"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
-            <span className="px-1 text-[11px] font-medium">
+            <span className="px-1 text-[11px] font-medium text-slate-700">
               {activePageIndex + 1} / {totalPages}
             </span>
             <button
               onClick={() => setActivePageIndex(Math.min(totalPages - 1, activePageIndex + 1))}
               disabled={activePageIndex === totalPages - 1}
-              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30"
+              className="p-0.5 rounded hover:bg-slate-100 disabled:opacity-30 cursor-pointer"
+              title="Next Page"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Zoom controls */}
-          <div className="flex items-center space-x-1 bg-white px-2 py-1 rounded-lg border border-slate-200 text-xs text-slate-700">
+          <div className="flex items-center space-x-1 bg-white px-1.5 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-2xs">
             <button
-              onClick={() => setZoom(Math.max(50, zoom - 15))}
-              className="p-0.5 rounded hover:bg-slate-100"
+              onClick={() => setZoom(Math.max(40, zoom - 15))}
+              className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
               title="Zoom Out"
             >
               <ZoomOut className="w-3.5 h-3.5" />
             </button>
-            <span className="text-[11px] w-9 text-center font-mono">{zoom}%</span>
             <button
-              onClick={() => setZoom(Math.min(175, zoom + 15))}
-              className="p-0.5 rounded hover:bg-slate-100"
+              onClick={() => setZoom(100)}
+              className="text-[11px] w-10 text-center font-mono hover:text-brand-600 font-medium cursor-pointer"
+              title="Click to reset to 100%"
+            >
+              {zoom}%
+            </button>
+            <button
+              onClick={() => setZoom(Math.min(200, zoom + 15))}
+              className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
               title="Zoom In"
             >
               <ZoomIn className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* Fit Width / Fit Page buttons */}
+          <div className="flex items-center space-x-0.5 bg-white p-0.5 rounded-lg border border-slate-200 text-slate-600 shadow-2xs">
+            <button
+              onClick={handleFitWidth}
+              className="px-1.5 py-0.5 rounded text-[11px] font-medium hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1 cursor-pointer"
+              title="Fit to Width"
+            >
+              <Maximize2 className="w-3 h-3 text-slate-500" />
+              <span className="hidden xl:inline">Fit Width</span>
+            </button>
+            <button
+              onClick={handleFitPage}
+              className="px-1.5 py-0.5 rounded text-[11px] font-medium hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1 cursor-pointer"
+              title="Fit to Page"
+            >
+              <Minimize2 className="w-3 h-3 text-slate-500" />
+              <span className="hidden xl:inline">Fit Page</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Real PDF Canvas Viewport */}
-      <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-slate-50/80">
-        <div
-          className="relative bg-white shadow-2xl rounded-sm transition-all duration-200 select-none border border-slate-300 flex items-center justify-center overflow-hidden"
-          style={{
-            width: `${canvasDimensions.width}px`,
-            height: `${canvasDimensions.height}px`,
-            maxWidth: '100%',
-          }}
-        >
-          {/* Loading indicator */}
-          {isRenderingPage && !canvasRenderSuccess && (
-            <div className="absolute inset-0 bg-slate-50/60 backdrop-blur-xs flex items-center justify-center z-30">
-              <div className="flex items-center space-x-2 text-brand-400 text-xs font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-lg">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Rendering Page {activePageIndex + 1}...</span>
+      <div 
+        ref={viewportRef}
+        className="flex-1 overflow-auto p-6 md:p-8 flex flex-col items-center"
+      >
+        <div className="my-auto py-2 flex flex-col items-center">
+          <div
+            className="relative bg-white shadow-2xl rounded-sm select-none border border-slate-300"
+            style={{
+              width: `${canvasDimensions.width}px`,
+              height: `${canvasDimensions.height}px`,
+            }}
+          >
+            {/* Loading indicator */}
+            {isRenderingPage && (
+              <div className="absolute inset-0 bg-white/75 backdrop-blur-xs flex items-center justify-center z-30 transition-opacity">
+                <div className="flex items-center space-x-2 text-brand-600 text-xs font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-lg">
+                  <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+                  <span>Rendering Page {activePageIndex + 1}...</span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* 1. Base Layer: Real Uploaded PDF Page Rendered on Canvas */}
-          <canvas
-            ref={pdfCanvasRef}
-            className={`w-full h-full ${canvasRenderSuccess ? 'block' : 'hidden'}`}
-          />
-
-          {/* 1b. Fallback native PDF viewer if canvas rendering is initializing */}
-          {!canvasRenderSuccess && blobUrl && (
-            <object
-              data={`${blobUrl}#page=${activePageIndex + 1}&view=FitH&toolbar=0`}
-              type="application/pdf"
-              className="w-full h-full block"
-            >
-              <iframe
-                src={`${blobUrl}#page=${activePageIndex + 1}`}
-                className="w-full h-full border-0"
-                title={`Page ${activePageIndex + 1}`}
-              />
-            </object>
-          )}
-
-          {/* 2. Top Layer: Interactive Annotation, Draw & Redaction Canvas */}
-          <canvas
-            ref={annotationCanvasRef}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            className={`absolute inset-0 w-full h-full z-10 ${
-              activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'
-            }`}
-          />
-
-          {/* Text Input Popover */}
-          {textInputPos && (
-            <form
-              onSubmit={handleAddTextSubmit}
-              className="absolute z-30 bg-white border border-brand-500 shadow-xl rounded p-1 flex items-center space-x-1"
+            {/* 1. Base Layer: Real Uploaded PDF Page Rendered on Canvas */}
+            <canvas
+              ref={pdfCanvasRef}
+              className={`block ${canvasRenderSuccess ? 'opacity-100' : 'opacity-0'}`}
               style={{
-                left: `${(textInputPos.x / canvasDimensions.width) * 100}%`,
-                top: `${(textInputPos.y / canvasDimensions.height) * 100}%`,
+                width: `${canvasDimensions.width}px`,
+                height: `${canvasDimensions.height}px`,
               }}
-            >
-              <input
-                type="text"
-                autoFocus
-                value={textInputValue}
-                onChange={(e) => setTextInputValue(e.target.value)}
-                placeholder="Type text annotation..."
-                className="text-xs px-2 py-1 text-slate-800 outline-none w-48"
-              />
-              <button
-                type="submit"
-                className="bg-brand-500 text-white text-[10px] font-bold px-2 py-1 rounded hover:bg-brand-600"
+            />
+
+            {/* 2. Top Layer: Interactive Annotation, Draw & Redaction Canvas */}
+            <canvas
+              ref={annotationCanvasRef}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              className={`absolute inset-0 z-10 ${
+                activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'
+              }`}
+              style={{
+                width: `${canvasDimensions.width}px`,
+                height: `${canvasDimensions.height}px`,
+              }}
+            />
+
+            {/* Text Input Popover */}
+            {textInputPos && (
+              <form
+                onSubmit={handleAddTextSubmit}
+                className="absolute z-30 bg-white border border-brand-500 shadow-xl rounded p-1 flex items-center space-x-1"
+                style={{
+                  left: `${(textInputPos.x / (canvasDimensions.baseWidth || 612)) * 100}%`,
+                  top: `${(textInputPos.y / (canvasDimensions.baseHeight || 792)) * 100}%`,
+                }}
               >
-                Add
-              </button>
-            </form>
-          )}
+                <input
+                  type="text"
+                  autoFocus
+                  value={textInputValue}
+                  onChange={(e) => setTextInputValue(e.target.value)}
+                  placeholder="Type text annotation..."
+                  className="text-xs px-2 py-1 text-slate-800 outline-none w-48 bg-transparent"
+                />
+                <button
+                  type="submit"
+                  className="bg-brand-500 text-white text-[10px] font-bold px-2 py-1 rounded hover:bg-brand-600 cursor-pointer"
+                >
+                  Add
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </main>
   );
 }
-

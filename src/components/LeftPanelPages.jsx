@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { Trash2, RotateCw, Copy, ArrowUp, ArrowDown, Plus, Layers, Split } from 'lucide-react';
 
 export default function LeftPanelPages({
@@ -14,13 +14,13 @@ export default function LeftPanelPages({
   onOpenSplitModal
 }) {
   return (
-    <aside className="w-64 border-r border-slate-200 bg-white/80 backdrop-blur-sm flex flex-col h-[calc(100vh-4rem)] z-10 shrink-0">
+    <aside className="w-64 border-r border-slate-200 bg-white/90 backdrop-blur-sm flex flex-col h-full z-10 shrink-0">
       {/* Header */}
       <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Layers className="w-4 h-4 text-brand-400" />
-          <span className="font-semibold text-xs text-white uppercase tracking-wider">Pages</span>
-          <span className="px-1.5 py-0.5 rounded bg-white text-[10px] font-medium text-slate-600 border border-slate-200">
+          <Layers className="w-4 h-4 text-brand-500" />
+          <span className="font-semibold text-xs text-slate-800 uppercase tracking-wider">Pages</span>
+          <span className="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-medium text-slate-600 border border-slate-200">
             {pages.length}
           </span>
         </div>

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Robust PDF rendering helpers for Custumu
  * Ensures PDF.js initialization, clones array buffers, and renders on solid white canvas
  */
@@ -67,20 +67,64 @@ export async function renderPdfPage(pdfDoc, pageNumber, canvas, zoom = 100) {
   if (!pdfDoc || !canvas) return null;
   try {
     const page = await pdfDoc.getPage(pageNumber);
-    const scale = (zoom / 100) * 1.5;
-    const viewport = page.getViewport({ scale });
+    const unscaledViewport = page.getViewport({ scale: 1.0 });
+    const baseWidth = unscaledViewport.width;
+    const baseHeight = unscaledViewport.height;
 
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
+    // Standard CSS dimensions at user zoom level (zoom in percent: 100 = 1.0x scale)
+    const userScale = zoom / 100;
+    const cssWidth = Math.round(baseWidth * userScale);
+    const cssHeight = Math.round(baseHeight * userScale);
 
-    const ctx = canvas.getContext('2d');
+    // HiDPI / Retina device pixel ratio (capped at 2.5 to optimize memory & performance)
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+
+    // Render viewport at full device pixel density for vector-crisp sharpness
+    const renderViewport = page.getViewport({ scale: userScale * dpr });
+
+    // Cancel any previous ongoing render task on this canvas
+    if (canvas._currentRenderTask) {
+      try {
+        canvas._currentRenderTask.cancel();
+      } catch (e) {
+        // ignore cancellation exception
+      }
+      canvas._currentRenderTask = null;
+    }
+
+    // Set internal canvas resolution
+    canvas.width = Math.floor(renderViewport.width);
+    canvas.height = Math.floor(renderViewport.height);
+
+    // Set CSS display dimensions
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${cssHeight}px`;
+
+    const ctx = canvas.getContext('2d', { alpha: false });
     // Solid white background to prevent transparent checkerboard squares
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    await page.render({ canvasContext: ctx, viewport }).promise;
-    return { width: viewport.width, height: viewport.height };
+    const renderTask = page.render({
+      canvasContext: ctx,
+      viewport: renderViewport,
+    });
+    canvas._currentRenderTask = renderTask;
+
+    await renderTask.promise;
+    canvas._currentRenderTask = null;
+
+    return {
+      width: cssWidth,
+      height: cssHeight,
+      baseWidth,
+      baseHeight,
+      dpr,
+    };
   } catch (e) {
+    if (e?.name === 'RenderingCancelledException') {
+      return null;
+    }
     console.warn('PDF page render error:', e);
     return null;
   }

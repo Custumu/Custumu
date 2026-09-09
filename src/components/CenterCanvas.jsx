@@ -297,96 +297,123 @@ export default function CenterCanvas({
     }
   };
 
+  const actionGroups = useMemo(() => [
+    {
+      id: 'drawing-tools',
+      items: [
+        {
+          id: 'select',
+          label: 'Select',
+          icon: MousePointer,
+          title: 'Select & Cursor',
+          isTool: true,
+          activeClass: 'bg-brand-50 text-brand-600 border-brand-200 shadow-2xs',
+        },
+        {
+          id: 'text',
+          label: 'Text',
+          icon: Type,
+          title: 'Add Text Overlay',
+          isTool: true,
+          activeClass: 'bg-brand-50 text-brand-600 border-brand-200 shadow-2xs',
+        },
+        {
+          id: 'draw',
+          label: 'Pen',
+          icon: PenTool,
+          title: 'Freehand Pen',
+          isTool: true,
+          activeClass: 'bg-brand-50 text-brand-600 border-brand-200 shadow-2xs',
+        },
+        {
+          id: 'highlight',
+          label: 'Highlight',
+          icon: Highlighter,
+          title: 'Highlighter',
+          isTool: true,
+          activeClass: 'bg-amber-50 text-amber-600 border-amber-200 shadow-2xs',
+        },
+        {
+          id: 'redact',
+          label: 'Redact',
+          icon: Square,
+          title: 'Redact / Blackout Box',
+          isTool: true,
+          activeClass: 'bg-rose-50 text-rose-600 border-rose-200 shadow-2xs',
+        },
+      ],
+    },
+    {
+      id: 'document-actions',
+      items: [
+        {
+          id: 'sign',
+          label: 'Sign',
+          icon: Stamp,
+          title: 'e-Signature Pad',
+          onClick: onOpenSignatureModal,
+          className: 'text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100/80 border-emerald-200 shadow-2xs',
+        },
+        {
+          id: 'watermark',
+          label: 'Watermark',
+          icon: Lock,
+          title: 'Watermark Document',
+          onClick: () => onAddWatermark('CONFIDENTIAL'),
+          className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
+          hideOnSmall: true,
+        },
+      ],
+    },
+  ], [onOpenSignatureModal, onAddWatermark]);
+
   return (
     <main className="flex-1 flex flex-col bg-slate-100/70 h-full overflow-hidden relative min-w-0">
       {/* Top Floating Action Toolbar */}
       <div className="h-11 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0 shadow-xs">
-        {/* Left: Interactive Tools */}
+        {/* Left: Interactive Tools & Actions */}
         <div className="flex items-center space-x-1">
-          <button
-            onClick={() => setActiveTool('select')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
-              activeTool === 'select'
-                ? 'bg-brand-50 text-brand-600 border border-brand-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-            title="Select & Cursor"
-          >
-            <MousePointer className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Select</span>
-          </button>
+          {actionGroups.map((group, groupIdx) => (
+            <React.Fragment key={group.id}>
+              {groupIdx > 0 && <div className="h-4 w-px bg-slate-200 mx-1.5" />}
+              <div className="flex items-center space-x-1">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTool === item.id;
 
-          <button
-            onClick={() => setActiveTool('text')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
-              activeTool === 'text'
-                ? 'bg-brand-50 text-brand-600 border border-brand-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-            title="Add Text Overlay"
-          >
-            <Type className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Text</span>
-          </button>
+                  if (item.isTool) {
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveTool(item.id)}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer border ${
+                          isActive
+                            ? item.activeClass
+                            : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                        }`}
+                        title={item.title}
+                      >
+                        <Icon className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">{item.label}</span>
+                      </button>
+                    );
+                  }
 
-          <button
-            onClick={() => setActiveTool('draw')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
-              activeTool === 'draw'
-                ? 'bg-brand-50 text-brand-600 border border-brand-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-            title="Freehand Pen"
-          >
-            <PenTool className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Pen</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTool('highlight')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
-              activeTool === 'highlight'
-                ? 'bg-amber-50 text-amber-600 border border-amber-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-            title="Highlighter"
-          >
-            <Highlighter className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Highlight</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTool('redact')}
-            className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer ${
-              activeTool === 'redact'
-                ? 'bg-rose-50 text-rose-600 border border-rose-200 shadow-2xs'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-            }`}
-            title="Redact / Blackout Box"
-          >
-            <Square className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Redact</span>
-          </button>
-
-          <div className="h-4 w-px bg-slate-200 mx-1.5"></div>
-
-          <button
-            onClick={onOpenSignatureModal}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100/80 border border-emerald-200 flex items-center space-x-1.5 transition cursor-pointer shadow-2xs"
-            title="e-Signature Pad"
-          >
-            <Stamp className="w-3.5 h-3.5" />
-            <span>Sign</span>
-          </button>
-
-          <button
-            onClick={() => onAddWatermark('CONFIDENTIAL')}
-            className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 flex items-center space-x-1.5 transition cursor-pointer"
-            title="Watermark Document"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Watermark</span>
-          </button>
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={item.onClick}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center space-x-1.5 transition cursor-pointer border ${item.className}`}
+                      title={item.title}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      <span className={item.hideOnSmall ? 'hidden md:inline' : ''}>{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </React.Fragment>
+          ))}
         </div>
 
         {/* Right: Page Navigation & Zoom Controls */}

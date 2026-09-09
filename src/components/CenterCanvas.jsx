@@ -15,7 +15,7 @@ import {
   Maximize2,
   Minimize2
 } from 'lucide-react';
-import { loadPdfDoc, renderPdfPage } from '../services/pdfRenderer';
+import { loadPdfDoc, renderPdfPage, renderPdfTextLayer } from '../services/pdfRenderer';
 
 export default function CenterCanvas({
   docBuffer,
@@ -29,6 +29,7 @@ export default function CenterCanvas({
 }) {
   const viewportRef = useRef(null);
   const pdfCanvasRef = useRef(null);
+  const textLayerRef = useRef(null);
   const annotationCanvasRef = useRef(null);
   const highlightOffscreenRef = useRef(null);
   const [zoom, setZoom] = useState(100);
@@ -99,6 +100,16 @@ export default function CenterCanvas({
               annotationCanvasRef.current.height = Math.floor(dimensions.height * dpr);
               annotationCanvasRef.current.style.width = `${dimensions.width}px`;
               annotationCanvasRef.current.style.height = `${dimensions.height}px`;
+            }
+
+            // Render selectable DOM text layer matching the active zoom and dimensions
+            if (textLayerRef.current) {
+              await renderPdfTextLayer(
+                pdfDoc,
+                activePageIndex + 1,
+                textLayerRef.current,
+                zoom
+              );
             }
           }
         }
@@ -616,19 +627,32 @@ export default function CenterCanvas({
               }}
             />
 
-            {/* 2. Top Layer: Interactive Annotation, Draw & Redaction Canvas */}
+            {/* 2. Middle Layer: Real PDF Selectable Text Layer */}
+            <div
+              ref={textLayerRef}
+              className="textLayer"
+              style={{
+                width: `${canvasDimensions.width}px`,
+                height: `${canvasDimensions.height}px`,
+                pointerEvents: activeTool === 'select' ? 'auto' : 'none',
+                zIndex: 5,
+              }}
+            />
+
+            {/* 3. Top Layer: Interactive Annotation, Draw & Redaction Canvas */}
             <canvas
               ref={annotationCanvasRef}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              className={`absolute inset-0 z-10 ${
+              className={`absolute inset-0 ${
                 activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto'
               }`}
               style={{
                 width: `${canvasDimensions.width}px`,
                 height: `${canvasDimensions.height}px`,
                 cursor: getToolCursor(),
+                zIndex: 10,
               }}
             />
 

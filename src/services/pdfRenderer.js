@@ -147,3 +147,57 @@ export async function renderThumbnail(pdfDoc, pageNumber) {
     return null;
   }
 }
+
+/**
+ * Render the selectable DOM text layer over a rendered PDF page
+ * Uses PDF.js renderTextLayer to place transparent, selectable spans over each word
+ */
+export async function renderPdfTextLayer(pdfDoc, pageNumber, container, zoom = 100) {
+  if (!pdfDoc || !container) return null;
+  try {
+    const page = await pdfDoc.getPage(pageNumber);
+    const userScale = zoom / 100;
+    const viewport = page.getViewport({ scale: userScale });
+
+    // Cancel any ongoing text layer rendering on this container
+    if (container._currentTextLayerTask) {
+      try {
+        container._currentTextLayerTask.cancel();
+      } catch (e) {
+        // ignore cancellation
+      }
+      container._currentTextLayerTask = null;
+    }
+
+    // Reset container contents, dimensions & scale factor CSS custom property
+    container.innerHTML = '';
+    container.style.width = `${Math.round(viewport.width)}px`;
+    container.style.height = `${Math.round(viewport.height)}px`;
+    container.style.setProperty('--scale-factor', viewport.scale);
+
+    const textContent = await page.getTextContent();
+    const pdfjs = await getPdfJsLib();
+
+    if (pdfjs && typeof pdfjs.renderTextLayer === 'function') {
+      const task = pdfjs.renderTextLayer({
+        textContentSource: textContent,
+        textContent,
+        container,
+        viewport,
+        textDivs: []
+      });
+      container._currentTextLayerTask = task;
+      await task.promise;
+      container._currentTextLayerTask = null;
+      return true;
+    }
+    return false;
+  } catch (e) {
+    if (e?.name === 'RenderingCancelledException') {
+      return null;
+    }
+    console.warn('PDF text layer render error:', e);
+    return null;
+  }
+}
+

@@ -1,4 +1,4 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -53,3 +53,45 @@
     box-shadow: 0 0 30px -5px rgba(8, 145, 178, 0.12);
   }
 }
+
+/* PDF.js Selectable Text Layer */
+.textLayer {
+  position: absolute;
+  text-align: initial;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 1 !important;
+  line-height: 1;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.textLayer :is(span, br) {
+  color: transparent !important;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+/* Crisp brand selection highlight */
+.textLayer ::selection {
+  background: rgba(12, 142, 233, 0.38) !important;
+  color: transparent !important;
+}
+
+.textLayer ::-moz-selection {
+  background: rgba(12, 142, 233, 0.38) !important;
+  color: transparent !important;
+}
+
+.textLayer br {
+  user-select: none;
+}
+

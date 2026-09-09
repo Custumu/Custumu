@@ -146,7 +146,7 @@ export default function CanvasToolbar({
       {/* Right: Zoom & View Controls */}
       <div className="flex items-center space-x-2">
         {/* Zoom controls */}
-        <div className="flex items-center space-x-1 bg-white px-1.5 py-0.5 rounded-lg border border-slate-200 text-xs text-slate-700 shadow-sm">
+        <div className="flex items-center space-x-1 bg-white px-1.5 py-0.5 text-slate-700">
           <button
             onClick={() => setZoom(Math.max(40, zoom - 15))}
             className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
@@ -156,7 +156,7 @@ export default function CanvasToolbar({
           </button>
           <button
             onClick={() => setZoom(100)}
-            className="text-[11px] w-10 text-center font-mono hover:text-[#fcb500] font-medium cursor-pointer"
+            className="text-[11px] w-10 text-center hover:text-[#fcb500] font-medium cursor-pointer"
             title="Click to reset to 100%"
           >
             {zoom}%
@@ -171,7 +171,7 @@ export default function CanvasToolbar({
         </div>
 
         {/* Fit Width / Fit Page buttons */}
-        <div className="flex items-center space-x-0.5 bg-white p-0.5 rounded-lg border border-slate-200 text-slate-600 shadow-sm">
+        {/* <div className="flex items-center space-x-0.5 bg-white p-0.5 rounded-lg border border-slate-200 text-slate-600">
           <button
             onClick={onFitWidth}
             className="px-1.5 py-0.5 rounded text-[11px] font-medium hover:bg-slate-100 hover:text-slate-900 transition flex items-center gap-1 cursor-pointer"
@@ -188,7 +188,7 @@ export default function CanvasToolbar({
             <Minimize2 className="w-3 h-3 text-slate-500" />
             <span className="hidden xl:inline">Fit Page</span>
           </button>
-        </div>
+        </div> */}
       </div>
     </div>
   );

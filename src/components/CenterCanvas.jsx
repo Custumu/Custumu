@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { 
   MousePointer, 
   Type, 
@@ -36,6 +36,27 @@ export default function CenterCanvas({
   const [textInputValue, setTextInputValue] = useState('');
   const [isRenderingPage, setIsRenderingPage] = useState(false);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 612, height: 792 });
+  const [canvasRenderSuccess, setCanvasRenderSuccess] = useState(false);
+
+  // Create real Blob URL for uploaded PDF
+  const blobUrl = useMemo(() => {
+    if (!docBuffer) return null;
+    try {
+      const blob = new Blob([docBuffer], { type: 'application/pdf' });
+      return URL.createObjectURL(blob);
+    } catch (e) {
+      return null;
+    }
+  }, [docBuffer]);
+
+  // Clean up Blob URL when unmounted or changed
+  useEffect(() => {
+    return () => {
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+      }
+    };
+  }, [blobUrl]);
 
   // 1. Render the REAL uploaded PDF page onto pdfCanvasRef
   useEffect(() => {
@@ -49,20 +70,23 @@ export default function CenterCanvas({
         const pdfDoc = await loadPdfDoc(docBuffer);
         if (isCancelled) return;
 
-        const dimensions = await renderPdfPage(
-          pdfDoc,
-          activePageIndex + 1,
-          pdfCanvasRef.current,
-          zoom
-        );
+        if (pdfDoc) {
+          const dimensions = await renderPdfPage(
+            pdfDoc,
+            activePageIndex + 1,
+            pdfCanvasRef.current,
+            zoom
+          );
 
-        if (dimensions && !isCancelled) {
-          setCanvasDimensions(dimensions);
+          if (dimensions && !isCancelled) {
+            setCanvasDimensions(dimensions);
+            setCanvasRenderSuccess(true);
 
-          // Synchronize the overlay annotation canvas dimensions
-          if (annotationCanvasRef.current) {
-            annotationCanvasRef.current.width = dimensions.width;
-            annotationCanvasRef.current.height = dimensions.height;
+            // Synchronize the overlay annotation canvas dimensions
+            if (annotationCanvasRef.current) {
+              annotationCanvasRef.current.width = dimensions.width;
+              annotationCanvasRef.current.height = dimensions.height;
+            }
           }
         }
       } catch (err) {
@@ -366,7 +390,7 @@ export default function CenterCanvas({
       {/* Main Real PDF Canvas Viewport */}
       <div className="flex-1 overflow-auto p-6 flex items-center justify-center bg-dark-bg/80">
         <div
-          className="relative bg-white shadow-2xl rounded-sm transition-all duration-200 select-none border border-slate-300 flex items-center justify-center"
+          className="relative bg-white shadow-2xl rounded-sm transition-all duration-200 select-none border border-slate-300 flex items-center justify-center overflow-hidden"
           style={{
             width: `${canvasDimensions.width}px`,
             height: `${canvasDimensions.height}px`,
@@ -374,7 +398,7 @@ export default function CenterCanvas({
           }}
         >
           {/* Loading indicator */}
-          {isRenderingPage && (
+          {isRenderingPage && !canvasRenderSuccess && (
             <div className="absolute inset-0 bg-dark-bg/60 backdrop-blur-xs flex items-center justify-center z-30">
               <div className="flex items-center space-x-2 text-brand-400 text-xs font-medium bg-dark-card px-3 py-1.5 rounded-lg border border-dark-border shadow-lg">
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -386,8 +410,23 @@ export default function CenterCanvas({
           {/* 1. Base Layer: Real Uploaded PDF Page Rendered on Canvas */}
           <canvas
             ref={pdfCanvasRef}
-            className="w-full h-full block"
+            className={`w-full h-full ${canvasRenderSuccess ? 'block' : 'hidden'}`}
           />
+
+          {/* 1b. Fallback native PDF viewer if canvas rendering is initializing */}
+          {!canvasRenderSuccess && blobUrl && (
+            <object
+              data={`${blobUrl}#page=${activePageIndex + 1}&view=FitH&toolbar=0`}
+              type="application/pdf"
+              className="w-full h-full block"
+            >
+              <iframe
+                src={`${blobUrl}#page=${activePageIndex + 1}`}
+                className="w-full h-full border-0"
+                title={`Page ${activePageIndex + 1}`}
+              />
+            </object>
+          )}
 
           {/* 2. Top Layer: Interactive Annotation, Draw & Redaction Canvas */}
           <canvas
@@ -395,7 +434,9 @@ export default function CenterCanvas({
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
-            className="absolute inset-0 w-full h-full cursor-crosshair z-10"
+            className={`absolute inset-0 w-full h-full z-10 ${
+              activeTool === 'select' ? 'pointer-events-none' : 'pointer-events-auto cursor-crosshair'
+            }`}
           />
 
           {/* Text Input Popover */}

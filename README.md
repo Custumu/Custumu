@@ -5,94 +5,150 @@
 
 ---
 
-## 🚀 Product Vision
-Rather than building another generic clone of iLovePDF or Smallpdf with 40 isolated buttons, **Custumu** is designed as a unified **AI Document Workspace**.
+## 🚀 Quick Start: How to Run Locally
 
-- **Natural Language First:** Instead of finding the right tool, users simply drop a document and prompt:
-  - *"Remove pages 3, 7 and 9, compress the document, and give me a version under 5 MB."*
-  - *"Extract all invoice tables into an Excel file."*
-  - *"Turn this scanned agreement into searchable, editable text."*
-  - *"Find every occurrence of 'Acme Corp' and replace it with 'Custumu Inc.'."*
-- **Unified 3-Panel Studio:** No page reloading between merge, split, annotate, or AI chat. Everything lives in one seamless workspace.
-- **Privacy-First Dual Engine:**
-  - 🛡️ **Private Mode:** Zero-upload processing directly in the browser via WebAssembly (pdf-lib, PDF.js, etc.).
-  - ⚡ **Cloud Mode:** End-to-end encrypted pipelines for heavy OCR, deep conversions, batch processing, and LLM reasoning with guaranteed automatic deletion.
+### Prerequisites
+- Node.js 20+ installed
+- Git
 
 ---
 
-## 🏛️ The 4 Product Layers
+### Terminal 1: Frontend (React 19 + Vite)
+Open a terminal in the root directory:
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     CUSTUMU SAAS PLATFORM                       │
-├─────────────────────────────────────────────────────────────────┤
-│ Layer 4: PDF → Structured Data & Automations                    │
-│   • Invoices / Receipts → Excel / JSON                          │
-│   • Bank Statements → CSV / Accounting schemas                  │
-│   • Resume parsing, PO extraction, Diff/Comparison Engine       │
-├─────────────────────────────────────────────────────────────────┤
-│ Layer 3: AI Document Editing & Deep Reasoning                   │
-│   • Chat with PDF (Q&A, Summaries, Obligation analysis)         │
-│   • Natural language document edits (Add pages, logos, etc.)    │
-│   • Multi-document comparisons with semantic diff alerts        │
-├─────────────────────────────────────────────────────────────────┤
-│ Layer 2: High-Performance OCR & Transformations                 │
-│   • Scanned PDF → Searchable PDF & Word                         │
-│   • Layout preservation engine                                  │
-├─────────────────────────────────────────────────────────────────┤
-│ Layer 1: Everyday PDF Utilities (SEO Acquisition Drivers)       │
-│   • Organize: Merge, Split, Reorder, Delete, Rotate, Crop      │
-│   • Convert: PDF ⇄ Word, Excel, PPT, Images, HTML              │
-│   • Optimize & Protect: Compress, Flatten, Sign, Password       │
-└─────────────────────────────────────────────────────────────────┘
+```bash
+# Navigate to the project root
+cd Custumu
+
+# Install dependencies (if not already done)
+npm install
+
+# Start Vite development server
+npm run dev
 ```
 
+- **App URL:** [http://localhost:3000](http://localhost:3000)
+
 ---
 
-## 🖥️ Workspace Layout (3-Panel Studio)
+### Terminal 2: Backend Server (Express API & Real AI)
+Open a second terminal window:
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│  Custumu    [ Undo ]  [ Redo ]  [ Privacy: Local 🛡️ ]  [ Export ]  │
-├──────────────┬───────────────────────────────┬───────────────────┤
-│ 📑 Pages     │ 📄 PDF Viewer & Editor Canvas │ 🤖 AI Assistant   │
-│              │                               │                   │
-│ ┌──────────┐ │  [ Page 1 Preview & Canvas ]  │ "What do you want │
-│ │  Page 1  │ │                               │  to do today?"    │
-│ └──────────┘ │  • Text editing               │                   │
-│ ┌──────────┐ │  • Annotations & Highlight    │ [ Quick Prompts ] │
-│ │  Page 2  │ │  • Redaction                  │ • Compress to 5MB │
-│ └──────────┘ │  • Signatures & Watermarks    │ • Extract Tables  │
-│ ┌──────────┐ │                               │ • Summarize Terms │
-│ │  Page 3  │ │                               │                   │
-│ └──────────┘ │                               │ [ Ask / Prompt ]  │
-└──────────────┴───────────────────────────────┴───────────────────┘
+```bash
+# Navigate to the server folder
+cd Custumu/server
+
+# Install server dependencies (if not already done)
+npm install
+
+# Start the Express API server
+npm start
 ```
 
----
-
-## 🛠️ Technical Architecture
-
-- **Frontend:** React / Modern SPA (Vanilla CSS design system, sleek dark/light mode, micro-animations)
-- **Client-side PDF Engine:** WebAssembly, `pdf-lib`, `pdfjs-dist` for instant, private client operations
-- **Backend API:** Node.js / Express (or Next.js)
-- **Database & Auth:** Supabase / PostgreSQL
-- **Worker & Processing Queue:** Asynchronous PDF processing worker tier (LibreOffice, Ghostscript, PDFium, MuPDF, Tesseract/OCR engine)
-- **AI Orchestration:** LLM embeddings, document chunking, structured extraction schemas (Zod / JSON Schema), table parsers
+- **API URL:** [http://localhost:5000](http://localhost:5000)
+- **Health Check:** [http://localhost:5000/api/health](http://localhost:5000/api/health)
 
 ---
 
-## 🎯 MVP Launch Checklist (The Core 8)
-1. [ ] **Merge PDF** (Instant browser-side + cloud)
-2. [ ] **Split / Reorder Pages** (Visual thumbnail drag-and-drop)
-3. [ ] **Smart Compress PDF** (Target file-size slider & WebAssembly optimizer)
-4. [ ] **PDF → Word / Office**
-5. [ ] **PDF → Excel / CSV** (Table extraction)
-6. [ ] **OCR Engine** (Scanned document to searchable text)
-7. [ ] **Interactive Visual Editor** (Text, signatures, annotations, redact)
-8. [ ] **AI Chat & Action Assistant** (Ask questions + command-driven edits)
+## 🔑 How to Configure Real AI API Keys
+
+Custumu connects to real LLMs (**OpenAI**, **Google Gemini**, and **Anthropic Claude**) with real vector document RAG and autonomous function calling.
+
+You can set up your API key in either of two ways:
+
+### Option A: In the Web App (Easiest / 100% Private BYOK)
+1. Open [http://localhost:3000](http://localhost:3000).
+2. Click **AI Engine Settings** (or the ⚙️ gear icon in the top right of the AI panel).
+3. Choose your provider (**OpenAI**, **Google Gemini**, or **Anthropic**).
+4. Paste your API key and click **Apply Engine Settings**.
+5. *Keys are stored strictly in your browser's local storage and make direct zero-knowledge API calls.*
+
+### Option B: In the Backend `.env` File
+1. Open `server/.env` in your editor.
+2. Add one or more keys:
+   ```env
+   PORT=5000
+   OPENAI_API_KEY=sk-proj-...
+   # or
+   GEMINI_API_KEY=AIzaSy...
+   # or
+   ANTHROPIC_API_KEY=sk-ant-...
+   ```
+3. Restart the backend server (`npm start` in `server/`).
 
 ---
 
-## 📂 Project Structure Guide
-See [`docs/product_specification.md`](./docs/product_specification.md) for full technical requirements, API routes, and schema definitions.
+## 🏛️ Project Architecture & File Structure
+
+```
+Custumu/
+├── src/                          # React 19 Frontend
+│   ├── components/
+│   │   ├── Navbar.jsx            # Top bar, privacy mode toggle, export options
+│   │   ├── HeroDropzone.jsx      # Unified landing dropzone + sample document loader
+│   │   ├── LeftPanelPages.jsx    # Page thumbnails, reorder, rotate, delete, duplicate
+│   │   ├── CenterCanvas.jsx      # Interactive PDF canvas, drawing, text, redaction, signatures
+│   │   ├── RightPanelAI.jsx      # Real streaming AI copilot, clickable citations, tool execution cards
+│   │   └── modals/
+│   │       ├── ApiKeyModal.jsx   # AI model & API key configuration modal
+│   │       ├── SignatureModal.jsx# Canvas e-signature pad
+│   │       ├── CompressModal.jsx # Target file-size slider & optimizer
+│   │       ├── SplitModal.jsx    # Page range extraction & bursting
+│   │       ├── MergeModal.jsx    # Multiple PDF combiner
+│   │       └── OCRModal.jsx      # Scanned PDF text layer viewer
+│   ├── services/
+│   │   ├── enterpriseAi.js       # Client AI engine: SSE stream reader, tool call dispatcher
+│   │   ├── pdfEngine.js          # Pure client WASM engine via pdf-lib: merge, split, rotate, sign
+│   │   └── pdfTextExtractor.js   # Native PDF text layer extractor for real document RAG
+│   ├── App.jsx                   # Master studio state management & tool coordinator
+│   └── index.css                 # Tailwind CSS design system with custom dark mode & glassmorphism
+│
+├── server/                       # Node.js + Express Backend
+│   ├── src/
+│   │   ├── index.js              # Express server entry point & CORS
+│   │   ├── routes/
+│   │   │   ├── ai.js             # Real streaming SSE endpoint (OpenAI / Gemini / Claude)
+│   │   │   └── jobs.js           # BullMQ job enqueueing, progress polling, and download
+│   │   ├── services/
+│   │   │   ├── rag.js            # Vector embeddings & cosine similarity search
+│   │   │   └── queue.js          # BullMQ / Redis job queue manager
+│   │   └── workers/
+│   │       └── pdfWorker.js      # Headless worker (LibreOffice, Ghostscript, Tesseract OCR)
+│   ├── Dockerfile.api            # Container for Express API
+│   ├── Dockerfile.worker         # Container with LibreOffice, Ghostscript & Tesseract
+│   └── .env                      # Server environment variables
+│
+├── migrations/                   # Database Migrations (PostgreSQL / Supabase)
+│   └── 001_initial_schema.sql    # Tables for users, workspaces, documents, jobs, AI messages
+│
+├── docker-compose.yml            # Multi-container orchestration (Nginx, API, Worker, Redis)
+└── Dockerfile.frontend           # Multi-stage React 19 production build served via Nginx
+```
+
+---
+
+## 🐳 Running with Docker (AWS EC2 Production)
+
+To run the complete production environment (Frontend, API, Worker, Redis):
+
+```bash
+docker compose up --build
+```
+
+- **Frontend (Nginx):** Port `80` / `3000`
+- **Backend API:** Port `5000`
+- **Redis Broker:** Port `6379`
+- **Worker:** Headless LibreOffice + Ghostscript + Tesseract OCR
+
+---
+
+## 🎯 The 8 Core MVP Features Implemented
+
+1. **Merge PDF:** Combine multiple PDF documents in browser memory.
+2. **Split PDF:** Extract page ranges or burst into individual files.
+3. **Smart Compress:** Target file-size slider (`< 2MB`, `< 5MB`) with savings preview.
+4. **PDF → Word:** Structured layout & text exported as `.doc`.
+5. **PDF → Excel:** Financial and invoice table detection exported to `.xlsx`.
+6. **OCR Engine:** Scanned document detection & searchable text layer viewer.
+7. **Visual PDF Editor:** Direct annotations, blackout redactions, and e-signatures.
+8. **Real AI Copilot:** Conversational Q&A with verified citations + autonomous document tool calls (`delete_page`, `rotate_page`, `add_watermark`, `compress_pdf`, `extract_tables`).

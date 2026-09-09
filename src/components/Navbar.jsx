@@ -1,5 +1,6 @@
 ﻿import React, { useState } from 'react';
-import { ShieldCheck, Cloud, Download, RotateCcw, RotateCw, FileText, ChevronDown, Check, Sparkles, Info } from 'lucide-react';
+import { ShieldCheck, Cloud, Download, RotateCcw, RotateCw, FileText,
+  Image, ChevronDown, Check, Sparkles, Info } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export default function Navbar({
@@ -11,6 +12,7 @@ export default function Navbar({
   onExportPdf,
   onExportWord,
   onExportExcel,
+  onOpenPngModal,
   onUndo,
   onRedo,
   canUndo,
@@ -83,7 +85,7 @@ export default function Navbar({
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
                 isPrivateMode
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-200'
+                  : 'text-slate-600 hover:text-slate-700'
               }`}
               title="Private Mode: Zero uploads, 100% in-browser WebAssembly"
             >
@@ -95,7 +97,7 @@ export default function Navbar({
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
                 !isPrivateMode
                   ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-200'
+                  : 'text-slate-600 hover:text-slate-700'
               }`}
               title="Cloud Mode: High-capacity AI & heavy worker conversions"
             >
@@ -123,34 +125,44 @@ export default function Navbar({
             </button>
 
             {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
+              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
                 <button
                   onClick={handleDownloadPdf}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-100 flex items-center space-x-2 text-slate-200 transition"
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition"
                 >
-                  <FileText className="w-4 h-4 text-rose-400" />
+                  <FileText className="w-4 h-4 text-rose-500 shrink-0" />
                   <div>
-                    <div className="font-medium">Export as PDF (.pdf)</div>
+                    <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
                     <div className="text-[11px] text-slate-500">Includes all annotations & edits</div>
                   </div>
                 </button>
                 <button
-                  onClick={() => { setShowExportMenu(false); onExportWord(); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-100 flex items-center space-x-2 text-slate-200 transition"
+                  onClick={() => { setShowExportMenu(false); onOpenPngModal && onOpenPngModal(); }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
                 >
-                  <FileText className="w-4 h-4 text-blue-400" />
+                  <Image className="w-4 h-4 text-cyan-600 shrink-0" />
                   <div>
-                    <div className="font-medium">Export as Word (.doc)</div>
+                    <div className="font-bold text-slate-900">Export as PNG (.png)</div>
+                    <div className="text-[11px] text-slate-500">Current page or all pages (High-Res)</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { setShowExportMenu(false); onExportWord(); }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
+                >
+                  <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                  <div>
+                    <div className="font-bold text-slate-900">Export as Word (.doc)</div>
                     <div className="text-[11px] text-slate-500">Editable text & headings</div>
                   </div>
                 </button>
                 <button
                   onClick={() => { setShowExportMenu(false); onExportExcel(); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-100 flex items-center space-x-2 text-slate-200 transition"
+                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
                 >
-                  <FileText className="w-4 h-4 text-emerald-400" />
+                  <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
                   <div>
-                    <div className="font-medium">Export Tables to Excel (.xlsx)</div>
+                    <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
                     <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
                   </div>
                 </button>
@@ -206,5 +218,7 @@ export default function Navbar({
     </>
   );
 }
+
+
 
 

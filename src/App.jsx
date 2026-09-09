@@ -11,6 +11,7 @@ import SplitModal from './components/modals/SplitModal';
 import MergeModal from './components/modals/MergeModal';
 import OCRModal from './components/modals/OCRModal';
 import ApiKeyModal from './components/modals/ApiKeyModal';
+import PngModal from './components/modals/PngModal';
 
 import {
   createDemoDocument,
@@ -24,6 +25,9 @@ import {
   compressPdf,
   exportTableToExcel,
   exportTextToWord,
+  convertPdfPageToPng,
+  convertAllPagesToPng,
+  downloadImage,
 } from './services/pdfEngine';
 
 import { extractPdfTextLayers } from './services/pdfTextExtractor';
@@ -65,6 +69,7 @@ export default function App() {
   const [isMergeModalOpen, setIsMergeModalOpen] = useState(false);
   const [isOcrModalOpen, setIsOcrModalOpen] = useState(false);
   const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+  const [isPngModalOpen, setIsPngModalOpen] = useState(false);
 
   // Toast Notification
   const [toast, setToast] = useState(null);
@@ -394,6 +399,34 @@ export default function App() {
     }
   };
 
+  const handleExportPng = async ({ scope, scale = 2 }) => {
+    if (!docBuffer) return;
+    try {
+      setToast({ message: 'Rendering high-resolution PNG...', type: 'info' });
+      const baseName = (docName || 'document').replace(/\.[^/.]+$/, '');
+
+      if (scope === 'all') {
+        const pages = await convertAllPagesToPng(docBuffer, scale);
+        pages.forEach(({ pageNumber, dataUrl }) => {
+          downloadImage(dataUrl, `${baseName}-page-${pageNumber}.png`);
+        });
+        setToast({ message: `Exported ${pages.length} pages to PNG!`, type: 'success' });
+      } else {
+        const dataUrl = await convertPdfPageToPng(docBuffer, activePageIndex, scale);
+        if (dataUrl) {
+          downloadImage(dataUrl, `${baseName}-page-${activePageIndex + 1}.png`);
+          setToast({ message: `Page ${activePageIndex + 1} exported to PNG!`, type: 'success' });
+        } else {
+          alert('Could not render page to PNG.');
+        }
+      }
+      setIsPngModalOpen(false);
+    } catch (err) {
+      console.error('Export PNG failed:', err);
+      alert('Failed to export PNG image.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
       {/* Toast Notification */}
@@ -416,6 +449,7 @@ export default function App() {
         onExportPdf={handleExportPdf}
         onExportWord={handleExportWord}
         onExportExcel={handleExportExcel}
+        onOpenPngModal={() => setIsPngModalOpen(true)}
         onUndo={handleUndo}
         onRedo={handleRedo}
         canUndo={historyIndex > 0}
@@ -578,11 +612,22 @@ export default function App() {
         activePageIndex={activePageIndex}
       />
 
-      <ApiKeyModal
+            <ApiKeyModal
         isOpen={isApiKeyModalOpen}
         onClose={() => setIsApiKeyModalOpen(false)}
+      />
+
+      <PngModal
+        isOpen={isPngModalOpen}
+        onClose={() => setIsPngModalOpen(false)}
+        activePageIndex={activePageIndex}
+        totalPages={docMeta.pageCount}
+        docName={docName}
+        onExport={handleExportPng}
       />
     </div>
   );
 }
+
+
 

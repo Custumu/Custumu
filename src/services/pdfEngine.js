@@ -425,3 +425,71 @@ export function exportTextToWord(title, contentText, filename = 'Custumu_Documen
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Convert a specific PDF page to high-res PNG image
+ */
+export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0) {
+  if (typeof window !== 'undefined' && window.pdfjsLib) {
+    try {
+      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(docBuffer) }).promise;
+      const page = await pdf.getPage(pageIndex + 1);
+      const viewport = page.getViewport({ scale });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      return canvas.toDataURL('image/png');
+    } catch (e) {
+      console.error('PDF page to PNG error:', e);
+    }
+  }
+
+  // Fallback: capture currently rendered page canvas in DOM
+  const domCanvas = document.querySelector('main canvas');
+  if (domCanvas) {
+    return domCanvas.toDataURL('image/png');
+  }
+  return null;
+}
+
+/**
+ * Convert all pages in PDF to an array of high-res PNG images
+ */
+export async function convertAllPagesToPng(docBuffer, scale = 2.0) {
+  const pngList = [];
+  if (typeof window !== 'undefined' && window.pdfjsLib) {
+    try {
+      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(docBuffer) }).promise;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        const canvas = document.createElement('canvas');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext('2d');
+        await page.render({ canvasContext: ctx, viewport }).promise;
+        pngList.push({
+          pageNumber: i,
+          dataUrl: canvas.toDataURL('image/png'),
+        });
+      }
+    } catch (e) {
+      console.error('All pages to PNG error:', e);
+    }
+  }
+  return pngList;
+}
+
+/**
+ * Helper to trigger browser image download
+ */
+export function downloadImage(dataUrl, filename) {
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

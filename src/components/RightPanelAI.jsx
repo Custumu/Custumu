@@ -363,7 +363,7 @@ export default function RightPanelAI({
       </div>
 
       {/* Input Bar */}
-      <div className="p-3 border-t border-slate-200 bg-white">
+      <div className="p-3 bg-white">
         <form
           onSubmit={(e) => {
             e.preventDefault();

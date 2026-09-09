@@ -33,7 +33,7 @@ export default function Navbar({
         {/* Brand & Document Name */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           <div className="flex items-center space-x-2.5 cursor-pointer" onClick={onResetDocument} title="Custumu Home">
-            <img src="/logo.svg" alt="Custumu" className="w-8 h-8 rounded-lg shadow-sm" />
+            <img src="/logo.svg" alt="Custumu" className="w-8 h-8" />
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
                 Custumu

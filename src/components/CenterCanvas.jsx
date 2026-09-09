@@ -30,6 +30,7 @@ export default function CenterCanvas({
   const viewportRef = useRef(null);
   const pdfCanvasRef = useRef(null);
   const annotationCanvasRef = useRef(null);
+  const highlightOffscreenRef = useRef(null);
   const [zoom, setZoom] = useState(100);
   const [activeTool, setActiveTool] = useState('select'); // 'select' | 'text' | 'draw' | 'highlight' | 'redact'
   const [isDrawing, setIsDrawing] = useState(false);
@@ -117,22 +118,15 @@ export default function CenterCanvas({
     };
   }, [docBuffer, activePageIndex, zoom]);
 
-  const HIGHLIGHT_COLOR = 'rgba(250, 204, 21, 0.45)';
+  const HIGHLIGHT_COLOR = '#FACC15'; // Solid opaque yellow for layer merging
   const PEN_COLOR = '#0284C7';
 
-  // Helper to draw a single continuous stroke path with consistent styling
-  const drawPath = (ctx, type, points, scaleX, scaleY, color, width) => {
+  // Helper to draw raw line or point geometry
+  const drawRawPath = (ctx, points, scaleX, scaleY) => {
     if (!points || points.length === 0) return;
-    ctx.save();
     ctx.beginPath();
-    ctx.strokeStyle = type === 'highlight' ? HIGHLIGHT_COLOR : (color || PEN_COLOR);
-    ctx.lineWidth = (type === 'highlight' ? 18 : (width || 3)) * scaleX;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
     if (points.length === 1) {
       ctx.arc(points[0].x * scaleX, points[0].y * scaleY, ctx.lineWidth / 2, 0, Math.PI * 2);
-      ctx.fillStyle = ctx.strokeStyle;
       ctx.fill();
     } else {
       points.forEach((pt, idx) => {
@@ -143,10 +137,22 @@ export default function CenterCanvas({
       });
       ctx.stroke();
     }
+  };
+
+  const drawPenPath = (ctx, points, scaleX, scaleY, color, width) => {
+    if (!points || points.length === 0) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = color || PEN_COLOR;
+    ctx.fillStyle = color || PEN_COLOR;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    drawRawPath(ctx, points, scaleX, scaleY);
     ctx.restore();
   };
 
-  // 2. Render Annotations onto annotationCanvasRef (unified for live drawing & saved annotations)
+  // 2. Render Annotations onto annotationCanvasRef
   const renderAnnotations = (activeLivePath = null, activeLiveType = null, liveRedactRect = null) => {
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
@@ -160,34 +166,80 @@ export default function CenterCanvas({
 
     const pageAnnotations = annotations.filter((a) => a.pageIndex === activePageIndex);
 
-    // 1. Render all committed annotations
-    pageAnnotations.forEach((anno) => {
-      if (anno.type === 'draw' || anno.type === 'highlight') {
-        drawPath(ctx, anno.type, anno.points, scaleX, scaleY, anno.color, anno.width);
-      } else if (anno.type === 'redact') {
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
-      } else if (anno.type === 'text') {
-        ctx.fillStyle = '#1e293b';
-        ctx.font = `bold ${Math.round(14 * scaleX)}px Inter, sans-serif`;
-        ctx.fillText(anno.text, anno.x * scaleX, anno.y * scaleY);
-      } else if (anno.type === 'signature') {
-        const img = new Image();
-        img.src = anno.dataUrl;
-        const drawSig = () => {
-          ctx.drawImage(img, anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
-        };
-        img.onload = drawSig;
-        if (img.complete) drawSig();
-      }
-    });
+    // 1. Unified Highlight Layer:
+    // Render all highlights (both committed on this page and active live stroke) onto an offscreen canvas
+    // using solid opaque color. When overlapping strokes are drawn with opacity 1.0, they seamlessly merge
+    // into a single contiguous shape without darkening. Then we blit the unified layer with a fixed 0.42 alpha.
+    const highlightAnnos = pageAnnotations.filter((a) => a.type === 'highlight');
+    const isLiveHighlighting = activeLiveType === 'highlight' && activeLivePath && activeLivePath.length > 0;
 
-    // 2. Render active live drawing/highlight stroke using exact same continuous path
-    if (activeLivePath && activeLivePath.length > 0 && activeLiveType) {
-      drawPath(ctx, activeLiveType, activeLivePath, scaleX, scaleY);
+    if (highlightAnnos.length > 0 || isLiveHighlighting) {
+      if (!highlightOffscreenRef.current) {
+        highlightOffscreenRef.current = document.createElement('canvas');
+      }
+      const hCanvas = highlightOffscreenRef.current;
+      if (hCanvas.width !== canvas.width || hCanvas.height !== canvas.height) {
+        hCanvas.width = canvas.width;
+        hCanvas.height = canvas.height;
+      }
+      const hCtx = hCanvas.getContext('2d');
+      hCtx.clearRect(0, 0, hCanvas.width, hCanvas.height);
+      hCtx.strokeStyle = HIGHLIGHT_COLOR;
+      hCtx.fillStyle = HIGHLIGHT_COLOR;
+      hCtx.lineWidth = 18 * scaleX;
+      hCtx.lineCap = 'round';
+      hCtx.lineJoin = 'round';
+
+      highlightAnnos.forEach((anno) => {
+        drawRawPath(hCtx, anno.points, scaleX, scaleY);
+      });
+
+      if (isLiveHighlighting) {
+        drawRawPath(hCtx, activeLivePath, scaleX, scaleY);
+      }
+
+      ctx.save();
+      ctx.globalAlpha = 0.42;
+      ctx.drawImage(hCanvas, 0, 0);
+      ctx.restore();
     }
 
-    // 3. Render active live redaction box
+    // 2. Freehand Pen layer
+    const penAnnos = pageAnnotations.filter((a) => a.type === 'draw');
+    penAnnos.forEach((anno) => {
+      drawPenPath(ctx, anno.points, scaleX, scaleY, anno.color, (anno.width || 3) * scaleX);
+    });
+    if (activeLiveType === 'draw' && activeLivePath && activeLivePath.length > 0) {
+      drawPenPath(ctx, activeLivePath, scaleX, scaleY, PEN_COLOR, 3 * scaleX);
+    }
+
+    // 3. Text annotations
+    const textAnnos = pageAnnotations.filter((a) => a.type === 'text');
+    textAnnos.forEach((anno) => {
+      ctx.fillStyle = '#1e293b';
+      ctx.font = `bold ${Math.round(14 * scaleX)}px Inter, sans-serif`;
+      ctx.fillText(anno.text, anno.x * scaleX, anno.y * scaleY);
+    });
+
+    // 4. Signatures
+    const sigAnnos = pageAnnotations.filter((a) => a.type === 'signature');
+    sigAnnos.forEach((anno) => {
+      const img = new Image();
+      img.src = anno.dataUrl;
+      const drawSig = () => {
+        ctx.drawImage(img, anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
+      };
+      img.onload = drawSig;
+      if (img.complete) drawSig();
+    });
+
+    // 5. Redact boxes (both committed and live preview)
+    const redactAnnos = pageAnnotations.filter((a) => a.type === 'redact');
+    redactAnnos.forEach((anno) => {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
+    });
+
     if (liveRedactRect) {
       ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
       ctx.fillRect(

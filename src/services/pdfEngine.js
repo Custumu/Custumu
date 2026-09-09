@@ -470,11 +470,48 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
       const pageAnnotations = annotations.filter(a => a.pageIndex === pageIndex);
       const ratio = viewport.width / 612;
 
+      // 1. Highlight layer: render all highlights onto an offscreen canvas so overlaps merge uniformly
+      const highlightAnnos = pageAnnotations.filter(a => a.type === 'highlight');
+      if (highlightAnnos.length > 0) {
+        const hCanvas = document.createElement('canvas');
+        hCanvas.width = canvas.width;
+        hCanvas.height = canvas.height;
+        const hCtx = hCanvas.getContext('2d');
+        hCtx.strokeStyle = '#FACC15';
+        hCtx.fillStyle = '#FACC15';
+        hCtx.lineWidth = 18 * (ratio || 1);
+        hCtx.lineCap = 'round';
+        hCtx.lineJoin = 'round';
+
+        highlightAnnos.forEach(anno => {
+          if (!anno.points || anno.points.length === 0) return;
+          hCtx.beginPath();
+          if (anno.points.length === 1) {
+            hCtx.arc(anno.points[0].x * (ratio || 1), anno.points[0].y * (ratio || 1), hCtx.lineWidth / 2, 0, Math.PI * 2);
+            hCtx.fill();
+          } else {
+            anno.points.forEach((pt, idx) => {
+              const px = pt.x * (ratio || 1);
+              const py = pt.y * (ratio || 1);
+              if (idx === 0) hCtx.moveTo(px, py);
+              else hCtx.lineTo(px, py);
+            });
+            hCtx.stroke();
+          }
+        });
+
+        ctx.save();
+        ctx.globalAlpha = 0.42;
+        ctx.drawImage(hCanvas, 0, 0);
+        ctx.restore();
+      }
+
+      // 2. Other annotations (pen, redact, text)
       pageAnnotations.forEach(anno => {
-        if (anno.type === 'draw' || anno.type === 'highlight') {
+        if (anno.type === 'draw') {
           ctx.beginPath();
-          ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(250, 204, 21, 0.45)' : (anno.color || '#0284C7');
-          ctx.lineWidth = (anno.type === 'highlight' ? 18 : (anno.width || 3)) * (ratio || 1);
+          ctx.strokeStyle = anno.color || '#0284C7';
+          ctx.lineWidth = (anno.width || 3) * (ratio || 1);
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
 

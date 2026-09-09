@@ -72,7 +72,7 @@ export default function Navbar({
         {/* Right: Privacy Toggle & Export */}
         <div className="flex items-center space-x-3">
           {/* Privacy Switcher Badge */}
-          <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
+          {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
             <button
               onClick={() => setIsPrivateMode(true)}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
@@ -104,7 +104,7 @@ export default function Navbar({
             >
               <Info className="w-3.5 h-3.5" />
             </button>
-          </div>
+          </div> */}
 
           {/* Export Dropdown */}
           <div className="relative">

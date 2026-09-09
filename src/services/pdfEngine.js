@@ -1,3 +1,4 @@
+﻿import { loadPdfDoc } from './pdfRenderer';
 import { PDFDocument, rgb, degrees, StandardFonts } from 'pdf-lib';
 import * as XLSX from 'xlsx';
 
@@ -426,58 +427,112 @@ export function exportTextToWord(title, contentText, filename = 'Custumu_Documen
   URL.revokeObjectURL(url);
 }
 
+
 /**
- * Convert a specific PDF page to high-res PNG image
+ * Convert a specific PDF page to high-res PNG image with guaranteed solid white background
  */
-export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0) {
-  if (typeof window !== 'undefined' && window.pdfjsLib) {
-    try {
-      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(docBuffer) }).promise;
-      const page = await pdf.getPage(pageIndex + 1);
+export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0, annotations = []) {
+  if (!docBuffer) return null;
+  const pdfDoc = await loadPdfDoc(docBuffer);
+  if (!pdfDoc) {
+    // Fallback: check DOM canvas if it has rendered content
+    const domCanvas = document.querySelector('main canvas');
+    if (domCanvas && domCanvas.width > 100) {
+      const outCanvas = document.createElement('canvas');
+      outCanvas.width = domCanvas.width;
+      outCanvas.height = domCanvas.height;
+      const oCtx = outCanvas.getContext('2d');
+      oCtx.fillStyle = '#FFFFFF';
+      oCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+      oCtx.drawImage(domCanvas, 0, 0);
+      return outCanvas.toDataURL('image/png');
+    }
+    return null;
+  }
+
+  try {
+    const page = await pdfDoc.getPage(pageIndex + 1);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext('2d');
+
+    // CRITICAL: Solid opaque white background - guarantees NO transparent black/white squares
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Render the real PDF page at high resolution
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    // Overlay user annotations (drawings, signatures, redact boxes)
+    if (annotations && annotations.length > 0) {
+      const pageAnnotations = annotations.filter(a => a.pageIndex === pageIndex);
+      const ratio = viewport.width / 612;
+
+      pageAnnotations.forEach(anno => {
+        if (anno.type === 'draw' || anno.type === 'highlight') {
+          ctx.beginPath();
+          ctx.strokeStyle = anno.type === 'highlight' ? 'rgba(253, 224, 71, 0.45)' : (anno.color || '#2563EB');
+          ctx.lineWidth = (anno.type === 'highlight' ? 16 : (anno.width || 3)) * (ratio || 1);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+
+          anno.points.forEach((pt, idx) => {
+            const px = pt.x * (ratio || 1);
+            const py = pt.y * (ratio || 1);
+            if (idx === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.stroke();
+        } else if (anno.type === 'redact') {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(anno.x * ratio, anno.y * ratio, anno.width * ratio, anno.height * ratio);
+        } else if (anno.type === 'text') {
+          ctx.fillStyle = '#1e293b';
+          ctx.font = `bold ${Math.round(14 * ratio)}px Inter, sans-serif`;
+          ctx.fillText(anno.text, anno.x * ratio, anno.y * ratio);
+        }
+      });
+    }
+
+    return canvas.toDataURL('image/png');
+  } catch (e) {
+    console.error('PDF page to PNG rendering error:', e);
+    return null;
+  }
+}
+
+/**
+ * Convert all pages in PDF to an array of high-res PNG images with solid white background
+ */
+export async function convertAllPagesToPng(docBuffer, scale = 2.0, annotations = []) {
+  if (!docBuffer) return [];
+  const pdfDoc = await loadPdfDoc(docBuffer);
+  if (!pdfDoc) return [];
+
+  const pngList = [];
+  try {
+    for (let i = 1; i <= pdfDoc.numPages; i++) {
+      const page = await pdfDoc.getPage(i);
       const viewport = page.getViewport({ scale });
       const canvas = document.createElement('canvas');
       canvas.width = viewport.width;
       canvas.height = viewport.height;
       const ctx = canvas.getContext('2d');
+
+      // Solid opaque white background
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
       await page.render({ canvasContext: ctx, viewport }).promise;
-      return canvas.toDataURL('image/png');
-    } catch (e) {
-      console.error('PDF page to PNG error:', e);
+      pngList.push({
+        pageNumber: i,
+        dataUrl: canvas.toDataURL('image/png'),
+      });
     }
-  }
-
-  // Fallback: capture currently rendered page canvas in DOM
-  const domCanvas = document.querySelector('main canvas');
-  if (domCanvas) {
-    return domCanvas.toDataURL('image/png');
-  }
-  return null;
-}
-
-/**
- * Convert all pages in PDF to an array of high-res PNG images
- */
-export async function convertAllPagesToPng(docBuffer, scale = 2.0) {
-  const pngList = [];
-  if (typeof window !== 'undefined' && window.pdfjsLib) {
-    try {
-      const pdf = await window.pdfjsLib.getDocument({ data: new Uint8Array(docBuffer) }).promise;
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const viewport = page.getViewport({ scale });
-        const canvas = document.createElement('canvas');
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-        const ctx = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport }).promise;
-        pngList.push({
-          pageNumber: i,
-          dataUrl: canvas.toDataURL('image/png'),
-        });
-      }
-    } catch (e) {
-      console.error('All pages to PNG error:', e);
-    }
+  } catch (e) {
+    console.error('All pages to PNG error:', e);
   }
   return pngList;
 }

@@ -406,13 +406,13 @@ export default function App() {
       const baseName = (docName || 'document').replace(/\.[^/.]+$/, '');
 
       if (scope === 'all') {
-        const pages = await convertAllPagesToPng(docBuffer, scale);
+        const pages = await convertAllPagesToPng(docBuffer, scale, annotations);
         pages.forEach(({ pageNumber, dataUrl }) => {
           downloadImage(dataUrl, `${baseName}-page-${pageNumber}.png`);
         });
         setToast({ message: `Exported ${pages.length} pages to PNG!`, type: 'success' });
       } else {
-        const dataUrl = await convertPdfPageToPng(docBuffer, activePageIndex, scale);
+        const dataUrl = await convertPdfPageToPng(docBuffer, activePageIndex, scale, annotations);
         if (dataUrl) {
           downloadImage(dataUrl, `${baseName}-page-${activePageIndex + 1}.png`);
           setToast({ message: `Page ${activePageIndex + 1} exported to PNG!`, type: 'success' });
@@ -628,6 +628,7 @@ export default function App() {
     </div>
   );
 }
+
 
 
 

@@ -287,29 +287,12 @@ export default function SignatureOverlay({
               pointerEvents: isInteractive ? 'auto' : 'none',
             }}
           >
-            {anno.type === 'draw' && anno.svgPath && !anno.isErased ? (
-              <svg
-                viewBox={`0 0 ${anno.originalWidth || anno.width} ${anno.originalHeight || anno.height}`}
-                className="w-full h-full pointer-events-none select-none overflow-visible"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d={anno.svgPath}
-                  fill="none"
-                  stroke={anno.color || '#0284C7'}
-                  strokeWidth={anno.strokeWidth || 3}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            ) : (
-              <img
-                src={anno.dataUrl}
-                alt={anno.type === 'draw' ? 'Pen Drawing' : 'Stamped Signature'}
-                draggable={false}
-                className="w-full h-full object-contain pointer-events-none select-none"
-              />
-            )}
+            <img
+              src={anno.dataUrl}
+              alt={anno.type === 'draw' ? 'Pen Drawing' : 'Stamped Signature'}
+              draggable={false}
+              className="w-full h-full object-contain pointer-events-none select-none"
+            />
 
             {/* Handles and delete button when selected */}
             {isSelected && (

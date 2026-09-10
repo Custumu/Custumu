@@ -20,6 +20,7 @@ export default function CenterCanvas({
   const annotationCanvasRef = useRef(null);
   const highlightOffscreenRef = useRef(null);
   const eraserCanvasCacheRef = useRef(new Map());
+  const persistentDrawingCanvasesRef = useRef(new Map());
   const lastEraserPosRef = useRef(null);
   const [zoom, setZoom] = useState(100);
   const [activeTool, setActiveTool] = useState('select'); // 'select' | 'text' | 'draw' | 'highlight' | 'redact' | 'eraser'
@@ -300,8 +301,11 @@ export default function CenterCanvas({
             continue;
           }
 
-          // Retrieve or create offscreen working canvas from cache
-          let cacheEntry = eraserCanvasCacheRef.current.get(anno.id);
+          // Retrieve or create offscreen working canvas from cache or persistent ref
+          let cacheEntry =
+            eraserCanvasCacheRef.current.get(anno.id) ||
+            persistentDrawingCanvasesRef.current.get(anno.id);
+
           if (!cacheEntry) {
             const dpr = 2;
             const offCanvas = document.createElement('canvas');
@@ -309,17 +313,79 @@ export default function CenterCanvas({
             offCanvas.height = Math.max(1, Math.round(anno.height * dpr));
             const offCtx = offCanvas.getContext('2d');
 
-            const domImg = document.querySelector(`[data-annotation-id="${anno.id}"] img`);
-            if (domImg && domImg.complete && domImg.naturalWidth > 0) {
-              offCtx.drawImage(domImg, 0, 0, offCanvas.width, offCanvas.height);
-            } else {
-              const img = new Image();
-              img.src = anno.dataUrl;
-              if (img.complete) {
-                offCtx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
+            let painted = false;
+
+            // 1. Direct vector rasterization if points are available (crisp & instantaneous)
+            if (anno.type === 'draw' && anno.points && anno.points.length > 0 && !anno.isErased) {
+              offCtx.strokeStyle = anno.color || PEN_COLOR;
+              offCtx.fillStyle = anno.color || PEN_COLOR;
+              offCtx.lineWidth = (anno.strokeWidth || 3) * dpr;
+              offCtx.lineCap = 'round';
+              offCtx.lineJoin = 'round';
+              offCtx.beginPath();
+              if (anno.points.length === 1) {
+                offCtx.arc(
+                  (anno.points[0].x - anno.x) * dpr,
+                  (anno.points[0].y - anno.y) * dpr,
+                  ((anno.strokeWidth || 3) * dpr) / 2,
+                  0,
+                  Math.PI * 2
+                );
+                offCtx.fill();
+              } else {
+                anno.points.forEach((pt, idx) => {
+                  const px = (pt.x - anno.x) * dpr;
+                  const py = (pt.y - anno.y) * dpr;
+                  if (idx === 0) offCtx.moveTo(px, py);
+                  else offCtx.lineTo(px, py);
+                });
+                offCtx.stroke();
+              }
+              painted = true;
+            }
+
+            // 2. Query DOM image if already rendered
+            if (!painted) {
+              const domImg = document.querySelector(`[data-annotation-id="${anno.id}"] img`);
+              if (domImg && domImg.complete && domImg.naturalWidth > 0) {
+                offCtx.drawImage(domImg, 0, 0, offCanvas.width, offCanvas.height);
+                painted = true;
               }
             }
+
+            // 3. Fallback to vector points even if isErased was set
+            if (!painted && anno.type === 'draw' && anno.points && anno.points.length > 0) {
+              offCtx.strokeStyle = anno.color || PEN_COLOR;
+              offCtx.fillStyle = anno.color || PEN_COLOR;
+              offCtx.lineWidth = (anno.strokeWidth || 3) * dpr;
+              offCtx.lineCap = 'round';
+              offCtx.lineJoin = 'round';
+              offCtx.beginPath();
+              if (anno.points.length === 1) {
+                offCtx.arc(
+                  (anno.points[0].x - anno.x) * dpr,
+                  (anno.points[0].y - anno.y) * dpr,
+                  ((anno.strokeWidth || 3) * dpr) / 2,
+                  0,
+                  Math.PI * 2
+                );
+                offCtx.fill();
+              } else {
+                anno.points.forEach((pt, idx) => {
+                  const px = (pt.x - anno.x) * dpr;
+                  const py = (pt.y - anno.y) * dpr;
+                  if (idx === 0) offCtx.moveTo(px, py);
+                  else offCtx.lineTo(px, py);
+                });
+                offCtx.stroke();
+              }
+              painted = true;
+            }
+
             cacheEntry = { canvas: offCanvas, ctx: offCtx, dpr };
+            eraserCanvasCacheRef.current.set(anno.id, cacheEntry);
+            persistentDrawingCanvasesRef.current.set(anno.id, cacheEntry);
+          } else {
             eraserCanvasCacheRef.current.set(anno.id, cacheEntry);
           }
 
@@ -347,6 +413,7 @@ export default function CenterCanvas({
           offCtx.fill();
           offCtx.restore();
 
+          persistentDrawingCanvasesRef.current.set(anno.id, cacheEntry);
           const updatedDataUrl = canvas.toDataURL('image/png');
           annotationsChanged = true;
 
@@ -502,7 +569,7 @@ export default function CenterCanvas({
           try {
             const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
             let hasPixels = false;
-            for (let i = 3; i < imgData.length; i += 16) {
+            for (let i = 3; i < imgData.length; i += 4) {
               if (imgData[i] > 10) {
                 hasPixels = true;
                 break;
@@ -517,6 +584,10 @@ export default function CenterCanvas({
         }
         if (fullyErasedIds.size > 0) {
           setAnnotations((prev) => prev.filter((a) => !fullyErasedIds.has(a.id)));
+          fullyErasedIds.forEach((id) => {
+            eraserCanvasCacheRef.current.delete(id);
+            persistentDrawingCanvasesRef.current.delete(id);
+          });
         }
         eraserCanvasCacheRef.current.clear();
       }
@@ -573,9 +644,11 @@ export default function CenterCanvas({
 
         // Generate transparent high-res PNG dataUrl for PDF export and canvas previews
         let pngDataUrl = null;
+        let createdCanvas = null;
+        let createdCtx = null;
+        const dpr = 2;
         try {
           const offCanvas = document.createElement('canvas');
-          const dpr = 2;
           offCanvas.width = Math.ceil(boxWidth * dpr);
           offCanvas.height = Math.ceil(boxHeight * dpr);
           const offCtx = offCanvas.getContext('2d');
@@ -605,12 +678,21 @@ export default function CenterCanvas({
               offCtx.stroke();
             }
             pngDataUrl = offCanvas.toDataURL('image/png');
+            createdCanvas = offCanvas;
+            createdCtx = offCtx;
           }
         } catch (err) {
           console.warn('Could not generate offscreen PNG for pen drawing', err);
         }
 
         const drawId = `draw-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        if (createdCanvas && createdCtx) {
+          persistentDrawingCanvasesRef.current.set(drawId, {
+            canvas: createdCanvas,
+            ctx: createdCtx,
+            dpr,
+          });
+        }
         setAnnotations((prev) => [
           ...prev,
           {

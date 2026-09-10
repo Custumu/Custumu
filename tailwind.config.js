@@ -1,4 +1,4 @@
-﻿/** @type {import('tailwindcss').Config} */
+/** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   darkMode: 'class',
@@ -6,6 +6,9 @@ export default {
     extend: {
       colors: {
         brand: {
+          DEFAULT: 'var(--brand, #205ae3)',
+          primary: 'var(--brand, #205ae3)',
+          hover: 'var(--brand-hover, #184cc8)',
           50: '#eff6ff',
           100: '#dbeafe',
           200: '#bfdbfe',

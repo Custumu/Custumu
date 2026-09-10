@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --brand: #205ae3;
+  --brand-color: #205ae3;
+  --brand-hover: #184cc8;
+}
+
 @layer base {
   * {
     border-color: #e2e8f0;

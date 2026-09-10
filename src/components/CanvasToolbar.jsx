@@ -83,8 +83,7 @@ export default function CanvasToolbar({
             icon: Stamp,
             title: 'e-Signature Pad',
             onClick: onOpenSignatureModal,
-            className:
-              'text-amber-950 bg-[rgba(252,181,0,0.15)] hover:bg-[rgba(252,181,0,0.22)] border-[rgba(252,181,0,0.35)] shadow-xs font-semibold',
+            className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
           },
           {
             id: 'watermark',

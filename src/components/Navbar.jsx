@@ -42,25 +42,31 @@ export default function Navbar(props) {
   const canUndo = props.canUndo !== undefined ? props.canUndo : docCtx.canUndo;
   const canRedo = props.canRedo !== undefined ? props.canRedo : docCtx.canRedo;
   const [showToolsMenu, setShowToolsMenu] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const toolsMenuRef = useRef(null);
+  const exportMenuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target)) {
         setShowToolsMenu(false);
       }
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
     };
-    if (showToolsMenu) {
+    if (showToolsMenu || showExportMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [showToolsMenu]);
+  }, [showToolsMenu, showExportMenu]);
 
   const handleDownloadPdf = () => {
     setShowToolsMenu(false);
+    setShowExportMenu(false);
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.1 } });
     onExportPdf && onExportPdf();
   };
@@ -150,10 +156,17 @@ export default function Navbar(props) {
           {/* Multi-Column Tools & Conversion Popover */}
           <div className="relative" ref={toolsMenuRef}>
             <button
-              onClick={() => setShowToolsMenu(!showToolsMenu)}
-              className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#184cc8] transition cursor-pointer shadow-sm"
+              onClick={() => {
+                setShowToolsMenu(!showToolsMenu);
+                setShowExportMenu(false);
+              }}
+              className={`flex items-center space-x-2 border text-xs sm:text-sm font-medium px-3.5 sm:px-4 py-1.5 rounded-lg transition cursor-pointer shadow-xs ${
+                showToolsMenu
+                  ? 'bg-slate-100 border-slate-300 text-slate-900'
+                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+              }`}
             >
-              <LayoutGrid className="w-4 h-4" />
+              <LayoutGrid className="w-4 h-4 text-slate-500" />
               <span>Tools</span>
               <ChevronDown className={`w-3.5 h-3.5 ml-0.5 opacity-80 transition-transform ${showToolsMenu ? 'rotate-180' : ''}`} />
             </button>
@@ -288,26 +301,74 @@ export default function Navbar(props) {
                           <div className="text-[11px] text-slate-500 leading-tight">Extract tables to spreadsheet (.xlsx)</div>
                         </div>
                       </button>
-
-                      {/* Export as PDF */}
-                      <button
-                        onClick={() => { if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } handleDownloadPdf(); }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer border-t border-slate-200/60 mt-2 pt-2.5"
-                      >
-                        <div className="p-2 rounded-lg bg-[#205ae3]/10 text-[#205ae3] group-hover:bg-[#205ae3]/20 transition shrink-0 mt-0.5">
-                          <Download className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-[#205ae3] transition">Export as PDF</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Save PDF with annotations & edits</div>
-                        </div>
-                      </button>
                     </div>
 
                   </div>
                 </div>
               )}
             </div>
+
+            {/* Export Dropdown - visible when a document is in use */}
+            {hasDocument && (
+              <div className="relative" ref={exportMenuRef}>
+                <button
+                  onClick={() => {
+                    setShowExportMenu(!showExportMenu);
+                    setShowToolsMenu(false);
+                  }}
+                  className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#184cc8] transition cursor-pointer shadow-sm"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>Export</span>
+                  <ChevronDown className={`w-3.5 h-3.5 ml-0.5 opacity-80 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showExportMenu && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-fade-in">
+                    <button
+                      onClick={handleDownloadPdf}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4 text-rose-500 shrink-0" />
+                      <div>
+                        <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
+                        <div className="text-[11px] text-slate-500">Includes all annotations & edits</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); onOpenPngModal && onOpenPngModal(); }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                    >
+                      <Image className="w-4 h-4 text-cyan-600 shrink-0" />
+                      <div>
+                        <div className="font-bold text-slate-900">Export as PNG (.png)</div>
+                        <div className="text-[11px] text-slate-500">Current page or all pages (High-Res)</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); onExportWord && onExportWord(); }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                    >
+                      <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                      <div>
+                        <div className="font-bold text-slate-900">Export as Word (.doc)</div>
+                        <div className="text-[11px] text-slate-500">Editable text & headings</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); onExportExcel && onExportExcel(); }}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                    >
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <div>
+                        <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
+                        <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
       </header>
 

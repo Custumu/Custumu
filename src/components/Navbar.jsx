@@ -1,30 +1,46 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ShieldCheck, Cloud, Download, RotateCcw, RotateCw, FileText,
   Image, ChevronDown, Check, Sparkles, Info, Merge, Split, Trash2, Copy,
   ArrowUpDown, FileSpreadsheet, LayoutGrid, Layers } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useDocument } from '../context/DocumentContext';
 
-export default function Navbar({
-  hasDocument = false,
-  documentName,
-  pageCount,
-  isPrivateMode,
-  setIsPrivateMode,
-  onResetDocument,
-  onExportPdf,
-  onExportWord,
-  onExportExcel,
-  onOpenPngModal,
-  onOpenMergeModal,
-  onOpenSplitModal,
-  onDeletePage,
-  onExtractPages,
-  onOrganizePages,
-  onUndo,
-  onRedo,
-  canUndo,
-  canRedo
-}) {
+export default function Navbar(props) {
+  const docCtx = useDocument();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isEditor = location.pathname === '/editor';
+  const hasDocument = props.hasDocument !== undefined ? props.hasDocument : (isEditor && Boolean(docCtx.docBuffer));
+  const documentName = props.documentName ?? docCtx.docName;
+  const pageCount = props.pageCount ?? docCtx.docMeta.pageCount;
+  const isPrivateMode = props.isPrivateMode ?? docCtx.isPrivateMode;
+  const setIsPrivateMode = props.setIsPrivateMode ?? docCtx.setIsPrivateMode;
+  const onResetDocument = props.onResetDocument ?? (isEditor ? docCtx.handleResetDocument : () => navigate('/'));
+  const onExportPdf = props.onExportPdf ?? docCtx.handleExportPdf;
+  const onExportWord = props.onExportWord ?? docCtx.handleExportWord;
+  const onExportExcel = props.onExportExcel ?? docCtx.handleExportExcel;
+  const onOpenPngModal = props.onOpenPngModal ?? (() => docCtx.setIsPngModalOpen(true));
+  const onOpenMergeModal = props.onOpenMergeModal ?? (() => docCtx.setIsMergeModalOpen(true));
+  const onOpenSplitModal = props.onOpenSplitModal ?? (() => docCtx.setIsSplitModalOpen(true));
+  const onDeletePage = props.onDeletePage ?? (() => {
+    if (docCtx.docMeta.pageCount <= 1) {
+      docCtx.showToast('Document must contain at least 1 page.', 'error');
+      return;
+    }
+    if (window.confirm(`Delete current page (Page ${docCtx.activePageIndex + 1})?`)) {
+      docCtx.handleDeletePage(docCtx.activePageIndex);
+    }
+  });
+  const onExtractPages = props.onExtractPages ?? (() => docCtx.setIsSplitModalOpen(true));
+  const onOrganizePages = props.onOrganizePages ?? (() => {
+    docCtx.showToast('Use the left thumbnails panel to reorder, rotate, or duplicate pages', 'info');
+  });
+  const onUndo = props.onUndo ?? docCtx.handleUndo;
+  const onRedo = props.onRedo ?? docCtx.handleRedo;
+  const canUndo = props.canUndo !== undefined ? props.canUndo : docCtx.canUndo;
+  const canRedo = props.canRedo !== undefined ? props.canRedo : docCtx.canRedo;
   const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const toolsMenuRef = useRef(null);

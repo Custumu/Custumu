@@ -1,46 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" fill="none">
   <defs>
-    <!-- Premium App Icon Ambient Shadow -->
-    <filter id="logo-shadow" x="-20%" y="-15%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#0E4BB8" flood-opacity="0.32"/>
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.08"/>
-    </filter>
-
-    <!-- Vibrant Royal Azure Gradient -->
-    <linearGradient id="logo-gradient" x1="15%" y1="0%" x2="85%" y2="100%">
-      <stop offset="0%" stop-color="#1F70FC"/>
-      <stop offset="50%" stop-color="#1057E8"/>
-      <stop offset="100%" stop-color="#0741BF"/>
-    </linearGradient>
-
-    <!-- Top highlight reflection for iOS / macOS glass finish -->
-    <linearGradient id="logo-reflection" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22"/>
-      <stop offset="42%" stop-color="#FFFFFF" stop-opacity="0"/>
+    <!-- Rich, vibrant Royal Blue gradient (crisp & saturated, zero blur) -->
+    <linearGradient id="custumu-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2575FC"/>
+      <stop offset="60%" stop-color="#125BE8"/>
+      <stop offset="100%" stop-color="#0846C8"/>
     </linearGradient>
   </defs>
 
-  <!-- Squircle Base Tile -->
-  <g filter="url(#logo-shadow)">
-    <rect x="10" y="10" width="108" height="108" rx="30" fill="url(#logo-gradient)"/>
-    <rect x="10" y="10" width="108" height="108" rx="30" fill="url(#logo-reflection)"/>
-    <rect x="10.5" y="10.5" width="107" height="107" rx="29.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1"/>
-  </g>
+  <!-- Razor-sharp Squircle Base (Zero shadow blur, pure crisp vector edge) -->
+  <rect width="100" height="100" rx="26" fill="url(#custumu-blue)"/>
 
-  <!-- Cursive "Cu" Handwriting Script (Custumu Initials) -->
-  <path d="M 36,86
-           C 31,64 36,44 45,35
-           C 52,28 58,32 56,44
-           C 53,60 44,78 38,90
-           C 42,95 50,96 58,92
-           C 65,88 69,76 72,62
-           C 73,74 74,86 80,88
-           C 85,90 89,82 91,62
-           C 92,72 93,84 97,86
-           C 101,88 105,82 107,78"
+  <!-- Crisp White Cursive "Cu" Monogram -->
+  <path d="M 28,68
+           C 23,50 27,34 35,27
+           C 41,21 46,24 45,34
+           C 42,47 34,62 29,72
+           C 33,76 39,77 46,73
+           C 51,70 55,60 57,49
+           C 58,58 59,69 64,71
+           C 68,72 71,65 73,49
+           C 74,57 75,67 79,69
+           C 82,70 85,65 87,61"
         fill="none" 
         stroke="#FFFFFF" 
-        stroke-width="7.5" 
+        stroke-width="6" 
         stroke-linecap="round" 
         stroke-linejoin="round"/>
 </svg>

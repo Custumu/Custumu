@@ -324,22 +324,54 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
         ctx.restore();
       }
 
-      // 2. Other annotations (pen, redact, text)
+      // 2. Preload image-based annotations (signatures and drawings) so they render with 100% reliability
+      const imageAnnos = pageAnnotations.filter(
+        (a) => (a.type === 'signature' || a.type === 'draw') && a.dataUrl
+      );
+      const loadedImages = await Promise.all(
+        imageAnnos.map((anno) => {
+          return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve({ anno, img });
+            img.onerror = () => resolve({ anno, img: null });
+            img.src = anno.dataUrl;
+          });
+        })
+      );
+      const imageMap = new Map();
+      loadedImages.forEach(({ anno, img }) => {
+        if (img) imageMap.set(anno, img);
+      });
+
+      // 3. Other annotations (pen, redact, text, signature)
       pageAnnotations.forEach((anno) => {
         if (anno.type === 'draw') {
-          ctx.beginPath();
-          ctx.strokeStyle = anno.color || '#0284C7';
-          ctx.lineWidth = (anno.width || 3) * (ratio || 1);
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
+          const img = imageMap.get(anno);
+          if (img && anno.width && anno.height) {
+            // Draw moved/resized drawing at its exact updated position and scale
+            ctx.drawImage(
+              img,
+              anno.x * ratio,
+              anno.y * ratio,
+              anno.width * ratio,
+              anno.height * ratio
+            );
+          } else if (anno.points) {
+            // Fallback for legacy points-only drawings
+            ctx.beginPath();
+            ctx.strokeStyle = anno.color || '#0284C7';
+            ctx.lineWidth = (anno.strokeWidth || anno.width || 3) * (ratio || 1);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
 
-          anno.points.forEach((pt, idx) => {
-            const px = pt.x * (ratio || 1);
-            const py = pt.y * (ratio || 1);
-            if (idx === 0) ctx.moveTo(px, py);
-            else ctx.lineTo(px, py);
-          });
-          ctx.stroke();
+            anno.points.forEach((pt, idx) => {
+              const px = pt.x * (ratio || 1);
+              const py = pt.y * (ratio || 1);
+              if (idx === 0) ctx.moveTo(px, py);
+              else ctx.lineTo(px, py);
+            });
+            ctx.stroke();
+          }
         } else if (anno.type === 'redact') {
           ctx.fillStyle = '#000000';
           ctx.fillRect(anno.x * ratio, anno.y * ratio, anno.width * ratio, anno.height * ratio);
@@ -347,10 +379,9 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
           ctx.fillStyle = '#1e293b';
           ctx.font = `bold ${Math.round(14 * ratio)}px Inter, sans-serif`;
           ctx.fillText(anno.text, anno.x * ratio, anno.y * ratio);
-        } else if (anno.type === 'signature' && anno.dataUrl) {
-          const img = new Image();
-          img.src = anno.dataUrl;
-          if (img.complete) {
+        } else if (anno.type === 'signature') {
+          const img = imageMap.get(anno);
+          if (img) {
             ctx.drawImage(
               img,
               anno.x * ratio,
@@ -381,22 +412,13 @@ export async function convertAllPagesToPng(docBuffer, scale = 2.0, annotations =
   const pngList = [];
   try {
     for (let i = 1; i <= pdfDoc.numPages; i++) {
-      const page = await pdfDoc.getPage(i);
-      const viewport = page.getViewport({ scale });
-      const canvas = document.createElement('canvas');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-
-      // Solid opaque white background
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      await page.render({ canvasContext: ctx, viewport }).promise;
-      pngList.push({
-        pageNumber: i,
-        dataUrl: canvas.toDataURL('image/png'),
-      });
+      const dataUrl = await convertPdfPageToPng(docBuffer, i - 1, scale, annotations);
+      if (dataUrl) {
+        pngList.push({
+          pageNumber: i,
+          dataUrl,
+        });
+      }
     }
   } catch (e) {
     console.error('All pages to PNG error:', e);

@@ -203,8 +203,11 @@ export default function CenterCanvas({
     }
 
     // 2. Freehand Pen layer
-    const penAnnos = pageAnnotations.filter((a) => a.type === 'draw');
-    penAnnos.forEach((anno) => {
+    // Only render legacy pen annotations that do not have an interactive overlay representation
+    const legacyPenAnnos = pageAnnotations.filter(
+      (a) => a.type === 'draw' && !a.svgPath && !a.dataUrl
+    );
+    legacyPenAnnos.forEach((anno) => {
       drawPenPath(ctx, anno.points, scaleX, scaleY, anno.color, (anno.width || 3) * scaleX);
     });
     if (activeLiveType === 'draw' && activeLivePath && activeLivePath.length > 0) {
@@ -219,7 +222,7 @@ export default function CenterCanvas({
       ctx.fillText(anno.text, anno.x * scaleX, anno.y * scaleY);
     });
 
-    // 4. Signatures
+    // 4. Signatures & Pen drawings
     // Note: Rendered as interactive DOM overlays so they can be smoothly moved & resized.
 
     // 5. Redact boxes (both committed and live preview)
@@ -300,19 +303,121 @@ export default function CenterCanvas({
     const x = ((e.clientX - rect.left) / rect.width) * baseWidth;
     const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
-    if (activeTool === 'draw' || activeTool === 'highlight') {
+    if (activeTool === 'draw') {
+      const finalPath = currentPath.length > 0 ? currentPath : [{ x, y }];
+      if (finalPath.length > 0) {
+        const strokeWidth = 3;
+        const pad = 10;
+        const xs = finalPath.map((p) => p.x);
+        const ys = finalPath.map((p) => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const rawWidth = Math.max(1, maxX - minX);
+        const rawHeight = Math.max(1, maxY - minY);
+        const boxWidth = Math.max(28, rawWidth + pad * 2);
+        const boxHeight = Math.max(24, rawHeight + pad * 2);
+
+        // Center stroke within padded bounding box
+        const offsetX = (boxWidth - rawWidth) / 2;
+        const offsetY = (boxHeight - rawHeight) / 2;
+        const boxX = Math.max(0, minX - offsetX);
+        const boxY = Math.max(0, minY - offsetY);
+
+        // Build responsive vector SVG path
+        let svgPath = '';
+        if (finalPath.length === 1) {
+          const rx = (finalPath[0].x - boxX).toFixed(1);
+          const ry = (finalPath[0].y - boxY).toFixed(1);
+          svgPath = `M ${rx} ${ry} m -${strokeWidth},0 a ${strokeWidth},${strokeWidth} 0 1,0 ${strokeWidth * 2},0 a ${strokeWidth},${strokeWidth} 0 1,0 -${strokeWidth * 2},0`;
+        } else {
+          svgPath = finalPath
+            .map((p, idx) => {
+              const rx = (p.x - boxX).toFixed(1);
+              const ry = (p.y - boxY).toFixed(1);
+              return `${idx === 0 ? 'M' : 'L'} ${rx} ${ry}`;
+            })
+            .join(' ');
+        }
+
+        // Generate transparent high-res PNG dataUrl for PDF export and canvas previews
+        let pngDataUrl = null;
+        try {
+          const offCanvas = document.createElement('canvas');
+          const dpr = 2;
+          offCanvas.width = Math.ceil(boxWidth * dpr);
+          offCanvas.height = Math.ceil(boxHeight * dpr);
+          const offCtx = offCanvas.getContext('2d');
+          if (offCtx) {
+            offCtx.strokeStyle = PEN_COLOR;
+            offCtx.fillStyle = PEN_COLOR;
+            offCtx.lineWidth = strokeWidth * dpr;
+            offCtx.lineCap = 'round';
+            offCtx.lineJoin = 'round';
+            offCtx.beginPath();
+            if (finalPath.length === 1) {
+              offCtx.arc(
+                (finalPath[0].x - boxX) * dpr,
+                (finalPath[0].y - boxY) * dpr,
+                (strokeWidth * dpr) / 2,
+                0,
+                Math.PI * 2
+              );
+              offCtx.fill();
+            } else {
+              finalPath.forEach((pt, idx) => {
+                const px = (pt.x - boxX) * dpr;
+                const py = (pt.y - boxY) * dpr;
+                if (idx === 0) offCtx.moveTo(px, py);
+                else offCtx.lineTo(px, py);
+              });
+              offCtx.stroke();
+            }
+            pngDataUrl = offCanvas.toDataURL('image/png');
+          }
+        } catch (err) {
+          console.warn('Could not generate offscreen PNG for pen drawing', err);
+        }
+
+        const drawId = `draw-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        setAnnotations((prev) => [
+          ...prev,
+          {
+            id: drawId,
+            pageIndex: activePageIndex,
+            type: 'draw',
+            x: Math.round(boxX),
+            y: Math.round(boxY),
+            width: Math.round(boxWidth),
+            height: Math.round(boxHeight),
+            originalWidth: Math.round(boxWidth),
+            originalHeight: Math.round(boxHeight),
+            color: PEN_COLOR,
+            strokeWidth,
+            svgPath,
+            dataUrl: pngDataUrl,
+            points: finalPath,
+          },
+        ]);
+      }
+      setCurrentPath([]);
+      renderAnnotations();
+    } else if (activeTool === 'highlight') {
       const finalPath = currentPath.length > 0 ? currentPath : [{ x, y }];
       if (finalPath.length > 0) {
         setAnnotations((prev) => [
           ...prev,
           {
             pageIndex: activePageIndex,
-            type: activeTool,
+            type: 'highlight',
             points: finalPath,
           },
         ]);
       }
       setCurrentPath([]);
+      renderAnnotations();
     } else if (activeTool === 'redact') {
       const width = Math.abs(x - startPos.x);
       const height = Math.abs(y - startPos.y);
@@ -454,12 +559,13 @@ export default function CenterCanvas({
               }}
             />
 
-            {/* 4. Interactive Movable & Resizable Signatures Layer */}
+            {/* 4. Interactive Movable & Resizable Signatures & Drawings Layer */}
             <SignatureOverlay
               annotations={annotations}
               setAnnotations={setAnnotations}
               activePageIndex={activePageIndex}
               canvasDimensions={canvasDimensions}
+              activeTool={activeTool}
             />
 
             {/* Text Input Popover */}

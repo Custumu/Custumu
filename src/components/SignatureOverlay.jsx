@@ -6,30 +6,31 @@ export default function SignatureOverlay({
   setAnnotations,
   activePageIndex,
   canvasDimensions,
+  activeTool = 'select',
 }) {
   const [selectedSignatureId, setSelectedSignatureId] = useState(null);
   const [interactionState, setInteractionState] = useState(null);
 
-  // Memoized signatures for the current active page
-  const pageSignatures = useMemo(() => {
+  // Memoized signatures and pen drawings for the current active page
+  const pageItems = useMemo(() => {
     return annotations
-      .filter((a) => a.type === 'signature' && a.pageIndex === activePageIndex)
+      .filter((a) => (a.type === 'signature' || a.type === 'draw') && a.pageIndex === activePageIndex)
       .map((a, idx) => ({
         ...a,
-        id: a.id || `sig-${a.pageIndex}-${idx}`,
+        id: a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`,
       }));
   }, [annotations, activePageIndex]);
 
-  // Automatically select newly stamped signatures during render
-  const [prevSigCount, setPrevSigCount] = useState(pageSignatures.length);
-  if (pageSignatures.length !== prevSigCount) {
-    setPrevSigCount(pageSignatures.length);
-    if (pageSignatures.length > prevSigCount) {
-      setSelectedSignatureId(pageSignatures[pageSignatures.length - 1]?.id || null);
+  // Automatically select newly stamped signatures or newly drawn strokes
+  const [prevItemCount, setPrevItemCount] = useState(pageItems.length);
+  if (pageItems.length !== prevItemCount) {
+    setPrevItemCount(pageItems.length);
+    if (pageItems.length > prevItemCount) {
+      setSelectedSignatureId(pageItems[pageItems.length - 1]?.id || null);
     }
   }
 
-  // Window pointer & mouse listeners for moving and resizing signatures smoothly
+  // Window pointer & mouse listeners for moving and resizing items smoothly
   useEffect(() => {
     if (!interactionState) return;
 
@@ -55,13 +56,14 @@ export default function SignatureOverlay({
 
         setAnnotations((prev) =>
           prev.map((a, idx) => {
-            const annoId = a.id || `sig-${a.pageIndex}-${idx}`;
+            const annoId = a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`;
             return annoId === id ? { ...a, id: annoId, x: newX, y: newY } : a;
           })
         );
       } else if (type === 'resize') {
-        const MIN_WIDTH = 45;
-        const MIN_HEIGHT = 18;
+        const isDraw = startAnno.type === 'draw';
+        const MIN_WIDTH = isDraw ? 20 : 45;
+        const MIN_HEIGHT = isDraw ? 16 : 18;
 
         let newWidth = startAnno.width;
         let newHeight = startAnno.height;
@@ -132,7 +134,7 @@ export default function SignatureOverlay({
 
         setAnnotations((prev) =>
           prev.map((a, idx) => {
-            const annoId = a.id || `sig-${a.pageIndex}-${idx}`;
+            const annoId = a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`;
             return annoId === id
               ? {
                   ...a,
@@ -166,7 +168,7 @@ export default function SignatureOverlay({
     };
   }, [interactionState, canvasDimensions, setAnnotations]);
 
-  // Keyboard shortcut: Delete or Backspace removes selected signature, Escape deselects
+  // Keyboard shortcut: Delete or Backspace removes selected item, Escape deselects
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && selectedSignatureId) {
@@ -181,7 +183,7 @@ export default function SignatureOverlay({
           return;
         }
         setAnnotations((prev) =>
-          prev.filter((a, idx) => (a.id || `sig-${a.pageIndex}-${idx}`) !== selectedSignatureId)
+          prev.filter((a, idx) => (a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`) !== selectedSignatureId)
         );
         setSelectedSignatureId(null);
       }
@@ -190,7 +192,7 @@ export default function SignatureOverlay({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedSignatureId, setAnnotations]);
 
-  // Click anywhere outside the signature overlay to deselect
+  // Click anywhere outside the overlay to deselect
   useEffect(() => {
     if (!selectedSignatureId) return;
 
@@ -215,7 +217,7 @@ export default function SignatureOverlay({
       type: 'move',
       id: anno.id,
       startPointer: { x: e.clientX, y: e.clientY },
-      startAnno: { x: anno.x, y: anno.y, width: anno.width, height: anno.height },
+      startAnno: { x: anno.x, y: anno.y, width: anno.width, height: anno.height, type: anno.type },
       aspectRatio: anno.width / (anno.height || 1),
     });
   };
@@ -229,16 +231,16 @@ export default function SignatureOverlay({
       handle,
       id: anno.id,
       startPointer: { x: e.clientX, y: e.clientY },
-      startAnno: { x: anno.x, y: anno.y, width: anno.width, height: anno.height },
+      startAnno: { x: anno.x, y: anno.y, width: anno.width, height: anno.height, type: anno.type },
       aspectRatio: anno.width / (anno.height || 1),
     });
   };
 
-  if (pageSignatures.length === 0) return null;
+  if (pageItems.length === 0) return null;
 
   return (
     <>
-      {pageSignatures.map((anno) => {
+      {pageItems.map((anno) => {
         const isSelected = selectedSignatureId === anno.id;
         const baseWidth = canvasDimensions.baseWidth || 612;
         const baseHeight = canvasDimensions.baseHeight || 792;
@@ -250,16 +252,28 @@ export default function SignatureOverlay({
         const widthPx = (anno.width / baseWidth) * displayWidth;
         const heightPx = (anno.height / baseHeight) * displayHeight;
 
+        // When in draw mode, unselected drawings should not block new pen strokes
+        const isInteractive =
+          isSelected || activeTool === 'select' || (activeTool !== 'draw' && anno.type === 'signature');
+
         return (
           <div
             key={anno.id}
             data-signature-overlay="true"
-            onPointerDown={(e) => handleStartMove(e, anno)}
-            onMouseDown={(e) => handleStartMove(e, anno)}
-            className={`absolute select-none touch-none cursor-move ${
+            onPointerDown={(e) => {
+              if (isInteractive) handleStartMove(e, anno);
+            }}
+            onMouseDown={(e) => {
+              if (isInteractive) handleStartMove(e, anno);
+            }}
+            className={`absolute select-none touch-none ${
+              isInteractive ? 'cursor-move' : 'pointer-events-none'
+            } ${
               isSelected
                 ? 'ring-2 ring-brand-500 ring-dashed'
-                : 'hover:ring-1.5 hover:ring-brand-500/60 hover:ring-dashed hover:bg-brand-500/5'
+                : isInteractive
+                ? 'hover:ring-1.5 hover:ring-brand-500/60 hover:ring-dashed hover:bg-brand-500/5'
+                : ''
             }`}
             style={{
               left: `${leftPx}px`,
@@ -267,15 +281,32 @@ export default function SignatureOverlay({
               width: `${widthPx}px`,
               height: `${heightPx}px`,
               zIndex: isSelected ? 25 : 20,
-              pointerEvents: 'auto',
+              pointerEvents: isInteractive ? 'auto' : 'none',
             }}
           >
-            <img
-              src={anno.dataUrl}
-              alt="Stamped Signature"
-              draggable={false}
-              className="w-full h-full object-contain pointer-events-none select-none"
-            />
+            {anno.type === 'draw' && anno.svgPath ? (
+              <svg
+                viewBox={`0 0 ${anno.originalWidth || anno.width} ${anno.originalHeight || anno.height}`}
+                className="w-full h-full pointer-events-none select-none overflow-visible"
+                preserveAspectRatio="none"
+              >
+                <path
+                  d={anno.svgPath}
+                  fill="none"
+                  stroke={anno.color || '#0284C7'}
+                  strokeWidth={anno.strokeWidth || 3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            ) : (
+              <img
+                src={anno.dataUrl}
+                alt={anno.type === 'draw' ? 'Pen Drawing' : 'Stamped Signature'}
+                draggable={false}
+                className="w-full h-full object-contain pointer-events-none select-none"
+              />
+            )}
 
             {/* Handles and delete button when selected */}
             {isSelected && (
@@ -288,13 +319,13 @@ export default function SignatureOverlay({
                   onClick={(e) => {
                     e.stopPropagation();
                     setAnnotations((prev) =>
-                      prev.filter((a, idx) => (a.id || `sig-${a.pageIndex}-${idx}`) !== anno.id)
+                      prev.filter((a, idx) => (a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`) !== anno.id)
                     );
                     setSelectedSignatureId(null);
                   }}
-                  title="Delete signature (or press Delete)"
+                  title={anno.type === 'draw' ? 'Delete drawing (or press Delete)' : 'Delete signature (or press Delete)'}
                   className="absolute -top-3.5 -right-3.5 w-6 h-6 rounded-full bg-white dark:bg-slate-800 text-rose-500 hover:text-white hover:bg-rose-500 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center cursor-pointer transition-colors"
-                  style={{ zIndex: 30 }}
+                  style={{ zIndex: 30, pointerEvents: 'auto' }}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -303,30 +334,30 @@ export default function SignatureOverlay({
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'nw')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'nw')}
-                  title="Resize signature"
+                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
                   className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
-                  style={{ zIndex: 30 }}
+                  style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'ne')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'ne')}
-                  title="Resize signature"
+                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
                   className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
-                  style={{ zIndex: 30 }}
+                  style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'se')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'se')}
-                  title="Resize signature"
+                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
                   className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
-                  style={{ zIndex: 30 }}
+                  style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'sw')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'sw')}
-                  title="Resize signature"
+                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
                   className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
-                  style={{ zIndex: 30 }}
+                  style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
               </>
             )}

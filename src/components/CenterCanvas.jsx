@@ -396,7 +396,7 @@ export default function CenterCanvas({
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-slate-100/70 h-full overflow-hidden relative min-w-0">
+    <main className="flex-1 flex flex-col bg-slate-100/70 dark:bg-[#101012] h-full overflow-hidden relative min-w-0 transition-colors duration-150">
       {/* Top Floating Action Toolbar */}
       <CanvasToolbar
         activeTool={activeTool}
@@ -421,8 +421,8 @@ export default function CenterCanvas({
           >
             {/* Loading indicator */}
             {isRenderingPage && (
-              <div className="absolute inset-0 bg-white/75 backdrop-blur-xs flex items-center justify-center z-30 transition-opacity">
-                <div className="flex items-center space-x-2 text-brand-600 text-xs font-medium bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-lg">
+              <div className="absolute inset-0 bg-white/75 dark:bg-black/60 backdrop-blur-xs flex items-center justify-center z-30 transition-opacity">
+                <div className="flex items-center space-x-2 text-brand-600 dark:text-brand-400 text-xs font-medium bg-white dark:bg-[#1c1c21] px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#27272e] shadow-lg">
                   <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
                   <span>Rendering Page {activePageIndex + 1}...</span>
                 </div>

@@ -25,7 +25,7 @@ export default function CanvasToolbar({
 }) {
   // Consistent brand color styling with soft translucent opacity
   const brandActiveClass =
-    'bg-[rgba(252,181,0,0.15)] hover:bg-[rgba(252,181,0,0.22)] text-amber-950 border-[rgba(252,181,0,0.35)] shadow-xs font-semibold';
+    'bg-[rgba(252,181,0,0.15)] dark:bg-[rgba(252,181,0,0.22)] hover:bg-[rgba(252,181,0,0.22)] text-amber-950 dark:text-amber-300 border-[rgba(252,181,0,0.35)] dark:border-[rgba(252,181,0,0.45)] shadow-xs font-semibold';
 
   const actionGroups = useMemo(
     () => [
@@ -83,7 +83,7 @@ export default function CanvasToolbar({
             icon: Stamp,
             title: 'e-Signature Pad',
             onClick: onOpenSignatureModal,
-            className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
+            className: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c] border-transparent',
           },
           {
             id: 'watermark',
@@ -91,22 +91,22 @@ export default function CanvasToolbar({
             icon: Lock,
             title: 'Watermark Document',
             onClick: () => onAddWatermark('CONFIDENTIAL'),
-            className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
+            className: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c] border-transparent',
             hideOnSmall: true,
           },
         ],
       },
     ],
-    [onOpenSignatureModal, onAddWatermark]
+    [onOpenSignatureModal, onAddWatermark, brandActiveClass]
   );
 
   return (
-    <div className="h-11 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0 shadow-xs">
+    <div className="h-11 border-b border-slate-200/80 dark:border-[#27272e] bg-white/95 dark:bg-[#161619]/95 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0 shadow-xs transition-colors duration-150">
       {/* Left: Interactive Tools & Actions */}
       <div className="flex items-center space-x-1">
         {actionGroups.map((group, groupIdx) => (
           <React.Fragment key={group.id}>
-            {groupIdx > 0 && <div className="h-4 w-px bg-slate-200 mx-1.5" />}
+            {groupIdx > 0 && <div className="h-4 w-px bg-slate-200 dark:bg-[#27272e] mx-1.5" />}
             <div className="flex items-center space-x-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
@@ -120,7 +120,7 @@ export default function CanvasToolbar({
                       className={`px-2.5 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 transition cursor-pointer border ${
                         isActive
                           ? item.activeClass
-                          : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                          : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c]'
                       }`}
                       title={item.title}
                     >
@@ -150,10 +150,10 @@ export default function CanvasToolbar({
       {/* Right: Zoom & View Controls */}
       <div className="flex items-center space-x-2">
         {/* Zoom controls */}
-        <div className="flex items-center space-x-1 bg-white px-1.5 py-0.5 text-slate-700">
+        <div className="flex items-center space-x-1 bg-white dark:bg-[#161619] px-1.5 py-0.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-200/70 dark:border-[#27272e]">
           <button
             onClick={() => setZoom(Math.max(40, zoom - 15))}
-            className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+            className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-[#25252c] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
             title="Zoom Out"
           >
             <ZoomOut className="w-3.5 h-3.5" />
@@ -167,7 +167,7 @@ export default function CanvasToolbar({
           </button>
           <button
             onClick={() => setZoom(Math.min(200, zoom + 15))}
-            className="p-0.5 rounded hover:bg-slate-100 text-slate-600 hover:text-slate-900 cursor-pointer"
+            className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-[#25252c] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
             title="Zoom In"
           >
             <ZoomIn className="w-3.5 h-3.5" />

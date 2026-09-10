@@ -20,12 +20,16 @@ import {
   FileSpreadsheet,
   LayoutGrid,
   Layers,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useDocument } from '../context/DocumentContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Navbar(props) {
   const docCtx = useDocument();
+  const { theme, isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -113,7 +117,7 @@ export default function Navbar(props) {
 
   return (
     <>
-      <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0">
+      <header className="h-16 border-b border-slate-200 dark:border-[#27272e] bg-white/90 dark:bg-[#161619]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0 transition-colors duration-150">
         {/* Brand & Document Name */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           <div
@@ -123,7 +127,7 @@ export default function Navbar(props) {
           >
             <img src="/logo.svg" alt="Custumu" className="w-8 h-8" />
             <div className="flex flex-col">
-              <span className="font-display font-bold text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
+              <span className="font-display font-bold text-lg text-slate-900 dark:text-white tracking-tight flex items-center gap-1.5">
                 Custumu
               </span>
             </div>
@@ -131,7 +135,7 @@ export default function Navbar(props) {
 
           {/* Active File Pill - only visible when a document is loaded */}
           {hasDocument && documentName && (
-            <div className="hidden md:flex items-center space-x-2 text-xs text-slate-700 bg-slate-100/80 px-2.5 py-1 rounded-full border border-slate-200/60">
+            <div className="hidden md:flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-[#202026] px-2.5 py-1 rounded-full border border-slate-200/60 dark:border-[#2b2b34]">
               <FileText className="w-3.5 h-3.5 text-brand-400" />
               <span className="font-medium truncate max-w-[200px]">{documentName}</span>
             </div>
@@ -140,11 +144,11 @@ export default function Navbar(props) {
 
         {/* Center: Undo / Redo - only visible when a document is in use */}
         {hasDocument && (
-          <div className="hidden lg:flex items-center space-x-1 bg-white/60 p-1 rounded-lg border border-slate-200">
+          <div className="hidden lg:flex items-center space-x-1 bg-white/60 dark:bg-[#1c1c21] p-1 rounded-lg border border-slate-200 dark:border-[#27272e]">
             <button
               onClick={onUndo}
               disabled={!canUndo}
-              className={`p-1.5 rounded transition ${canUndo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}
+              className={`p-1.5 rounded transition ${canUndo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#282832]' : 'text-slate-400 dark:text-slate-600 cursor-not-allowed'}`}
               title="Undo (Ctrl+Z)"
             >
               <RotateCcw className="w-4 h-4" />
@@ -152,7 +156,7 @@ export default function Navbar(props) {
             <button
               onClick={onRedo}
               disabled={!canRedo}
-              className={`p-1.5 rounded transition ${canRedo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}
+              className={`p-1.5 rounded transition ${canRedo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#282832]' : 'text-slate-400 dark:text-slate-600 cursor-not-allowed'}`}
               title="Redo (Ctrl+Y)"
             >
               <RotateCw className="w-4 h-4" />
@@ -161,7 +165,7 @@ export default function Navbar(props) {
         )}
 
         {/* Right: Tools Popover (Always Visible) & Export */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center space-x-2 sm:space-x-2.5">
           {/* Privacy Switcher Badge */}
           {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
             <button
@@ -197,6 +201,20 @@ export default function Navbar(props) {
             </button>
           </div> */}
 
+          {/* Theme Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c] transition cursor-pointer"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDark ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-600 hover:text-slate-900" />
+            )}
+          </button>
+
           {/* Multi-Column Tools & Conversion Navigation Menu */}
           <div
             className="relative py-1.5"
@@ -211,22 +229,22 @@ export default function Navbar(props) {
               }}
               className={`flex items-center space-x-1 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 showToolsMenu
-                  ? 'text-[#205ae3] bg-blue-50/80'
-                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
+                  ? 'text-[#205ae3] bg-blue-50/80 dark:bg-blue-950/40 dark:text-blue-400'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c]'
               }`}
             >
               <span>Tools</span>
               <ChevronDown
-                className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3]' : ''}`}
+                className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3] dark:text-blue-400' : ''}`}
               />
             </button>
 
             {showToolsMenu && (
               <div className="absolute right-0 top-full pt-1 w-[540px] max-w-[95vw] z-50 animate-fade-in">
-                <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden text-slate-800">
-                  <div className="grid grid-cols-2 divide-x divide-slate-100">
+                <div className="bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-2xl shadow-2xl overflow-hidden text-slate-800 dark:text-slate-200">
+                  <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-[#27272e]">
                     {/* Column 1: Native Functionality */}
-                    <div className="p-3 space-y-1">
+                    <div className="p-3 space-y-1 dark:bg-[#161619]">
                       <div className="px-3 py-1.5 mb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5 text-brand-500" />
                         <span>Organize & Edit</span>
@@ -355,7 +373,7 @@ export default function Navbar(props) {
                     </div>
 
                     {/* Column 2: Convert from PDF */}
-                    <div className="p-3 space-y-1 bg-slate-50/40">
+                    <div className="p-3 space-y-1 bg-slate-50/40 dark:bg-[#131316]/50">
                       <div className="px-3 py-1.5 mb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
                         <span>Convert from PDF</span>
@@ -371,16 +389,16 @@ export default function Navbar(props) {
                           }
                           onOpenPngModal && onOpenPngModal();
                         }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-[#202026] hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-cyan-50 text-cyan-600 group-hover:bg-cyan-100 transition shrink-0 mt-0.5">
                           <Image className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-cyan-600 transition">
+                          <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 transition">
                             PDF to PNG
                           </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                             High-res images (.png)
                           </div>
                         </div>
@@ -396,16 +414,16 @@ export default function Navbar(props) {
                           }
                           onExportWord && onExportWord();
                         }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-[#202026] hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition shrink-0 mt-0.5">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition">
+                          <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition">
                             PDF to Word
                           </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                             Editable Word document (.doc)
                           </div>
                         </div>
@@ -421,16 +439,16 @@ export default function Navbar(props) {
                           }
                           onExportExcel && onExportExcel();
                         }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
+                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-[#202026] hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition shrink-0 mt-0.5">
                           <FileSpreadsheet className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-emerald-600 transition">
+                          <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition">
                             PDF to Excel
                           </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
+                          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                             Extract tables to spreadsheet (.xlsx)
                           </div>
                         </div>
@@ -460,15 +478,15 @@ export default function Navbar(props) {
               </button>
 
               {showExportMenu && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-fade-in">
+                <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-fade-in">
                   <button
                     onClick={handleDownloadPdf}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition cursor-pointer"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#202026] flex items-center space-x-2 text-slate-800 dark:text-slate-200 transition cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-rose-500 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">Export as PDF (.pdf)</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         Includes all annotations & edits
                       </div>
                     </div>
@@ -478,12 +496,12 @@ export default function Navbar(props) {
                       setShowExportMenu(false);
                       onOpenPngModal && onOpenPngModal();
                     }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#202026] flex items-center space-x-2 text-slate-800 dark:text-slate-200 transition border-t border-slate-100 dark:border-[#27272e] cursor-pointer"
                   >
                     <Image className="w-4 h-4 text-cyan-600 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900">Export as PNG (.png)</div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="font-bold text-slate-900 dark:text-slate-100">Export as PNG (.png)</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         Current page or all pages (High-Res)
                       </div>
                     </div>
@@ -493,12 +511,12 @@ export default function Navbar(props) {
                       setShowExportMenu(false);
                       onExportWord && onExportWord();
                     }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#202026] flex items-center space-x-2 text-slate-800 dark:text-slate-200 transition border-t border-slate-100 dark:border-[#27272e] cursor-pointer"
                   >
                     <FileText className="w-4 h-4 text-blue-500 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900">Export as Word (.doc)</div>
-                      <div className="text-[11px] text-slate-500">Editable text & headings</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">Export as Word (.doc)</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Editable text & headings</div>
                     </div>
                   </button>
                   <button
@@ -506,12 +524,12 @@ export default function Navbar(props) {
                       setShowExportMenu(false);
                       onExportExcel && onExportExcel();
                     }}
-                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-[#202026] flex items-center space-x-2 text-slate-800 dark:text-slate-200 transition border-t border-slate-100 dark:border-[#27272e] cursor-pointer"
                   >
                     <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
-                      <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">Export Tables to Excel (.xlsx)</div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Spreadsheet table parser</div>
                     </div>
                   </button>
                 </div>
@@ -524,35 +542,35 @@ export default function Navbar(props) {
       {/* Privacy Guarantee Modal */}
       {showPrivacyModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in">
+          <div className="bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-2xl max-w-md w-full p-6 shadow-2xl animate-fade-in text-slate-800 dark:text-slate-100">
             <div className="flex items-center space-x-3 mb-4">
               <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                   Custumu Dual Privacy Engine
                 </h3>
-                <p className="text-xs text-slate-600">custumu.com enterprise guarantee</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">custumu.com enterprise guarantee</p>
               </div>
             </div>
 
-            <div className="space-y-3 text-xs text-slate-700 leading-relaxed mb-6">
-              <div className="p-3 rounded-lg bg-white border border-slate-200">
+            <div className="space-y-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed mb-6">
+              <div className="p-3 rounded-lg bg-white dark:bg-[#1c1c21] border border-slate-200 dark:border-[#282834]">
                 <div className="font-semibold text-emerald-400 mb-1 flex items-center gap-1.5">
                   <Check className="w-3.5 h-3.5" /> Private Mode (Default)
                 </div>
-                <p className="text-slate-600">
+                <p className="text-slate-600 dark:text-slate-400">
                   Runs 100% inside your browser's WebAssembly engine. Your documents never leave
                   your computer or touch any server.
                 </p>
               </div>
 
-              <div className="p-3 rounded-lg bg-white border border-slate-200">
+              <div className="p-3 rounded-lg bg-white dark:bg-[#1c1c21] border border-slate-200 dark:border-[#282834]">
                 <div className="font-semibold text-brand-400 mb-1 flex items-center gap-1.5">
                   <Cloud className="w-3.5 h-3.5" /> Cloud Enclave Mode
                 </div>
-                <p className="text-slate-600">
+                <p className="text-slate-600 dark:text-slate-400">
                   Used for high-capacity multi-page OCR and deep AI transformations. Files are
                   end-to-end encrypted (TLS 1.3) and permanently purged immediately after
                   generation.
@@ -562,7 +580,7 @@ export default function Navbar(props) {
 
             <button
               onClick={() => setShowPrivacyModal(false)}
-              className="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium text-xs transition shadow"
+              className="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg font-medium text-xs transition shadow cursor-pointer"
             >
               Understood
             </button>

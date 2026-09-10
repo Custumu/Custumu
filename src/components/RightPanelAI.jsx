@@ -295,23 +295,23 @@ export default function RightPanelAI({
     }
 
     return (
-      <div className="mt-3 rounded-xl border border-slate-200/90 bg-slate-50/90 p-3 shadow-xs">
+      <div className="mt-3 rounded-xl border border-slate-200/90 dark:border-[#27272e] bg-slate-50/90 dark:bg-[#131316]/90 p-3 shadow-xs">
         {/* Card Header */}
-        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
+        <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70 dark:border-[#27272e]">
           <div className="flex items-center space-x-2">
-            <div className="p-1 rounded-md bg-white border border-slate-200 shadow-2xs">{icon}</div>
+            <div className="p-1 rounded-md bg-white dark:bg-[#1e1e23] border border-slate-200 dark:border-[#2b2b34] shadow-2xs">{icon}</div>
             <div>
-              <div className="text-[11px] font-bold text-slate-800 tracking-tight">{title}</div>
-              <div className="text-[10px] text-slate-500">Autonomous Action Ready</div>
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">{title}</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">Autonomous Action Ready</div>
             </div>
           </div>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(252,181,0,0.15)] text-amber-950 border border-[rgba(252,181,0,0.35)]">
+          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(252,181,0,0.15)] dark:bg-[rgba(252,181,0,0.22)] text-amber-950 dark:text-amber-300 border border-[rgba(252,181,0,0.35)]">
             1-Click Action
           </span>
         </div>
 
         {/* Action Summary */}
-        <p className="text-[11px] text-slate-600 mb-2.5 font-medium leading-relaxed">
+        <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-2.5 font-medium leading-relaxed">
           {action.summary || 'Click below to execute this change directly on your document.'}
         </p>
 
@@ -320,15 +320,15 @@ export default function RightPanelAI({
 
         {/* 1-Click Action Button */}
         {isExecuted ? (
-          <div className="w-full py-2 px-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-semibold flex items-center justify-center space-x-1.5 shadow-2xs">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <div className="w-full py-2 px-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center justify-center space-x-1.5 shadow-2xs">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Executed Successfully</span>
           </div>
         ) : (
           <button
             onClick={() => handleActionClick(action, messageId)}
             disabled={isExecuting}
-            className="w-full py-2 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
+            className="w-full py-2 px-3 rounded-lg bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 active:scale-[0.99] text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition shadow-xs cursor-pointer disabled:opacity-50"
           >
             {isExecuting ? (
               <>
@@ -348,15 +348,15 @@ export default function RightPanelAI({
   };
 
   return (
-    <aside className="w-80 lg:w-96 border-l border-slate-200 bg-white/95 backdrop-blur-sm flex flex-col h-full z-10 shrink-0">
+    <aside className="w-80 lg:w-96 border-l border-slate-200 dark:border-[#27272e] bg-white/95 dark:bg-[#161619]/95 backdrop-blur-sm flex flex-col h-full z-10 shrink-0 transition-colors duration-150">
       {/* Panel Header */}
-      <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
+      <div className="p-3.5 border-b border-slate-200 dark:border-[#27272e] flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <div className="p-1.5 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-500 text-white shadow-sm">
             <Sparkles className="w-3.5 h-3.5" />
           </div>
           <div>
-            <div className="font-semibold text-xs text-slate-800 flex items-center gap-1.5">
+            <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
               Enterprise AI Copilot
             </div>
           </div>
@@ -365,21 +365,21 @@ export default function RightPanelAI({
 
       {/* Quick Prompt Chips - Only show if PDF contains real text */}
       {hasDocText && (
-        <div className="px-3 py-2 border-b border-slate-200/60 bg-white/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
+        <div className="px-3 py-2 border-b border-slate-200/60 dark:border-[#27272e] bg-white/40 dark:bg-[#161619]/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
           <button
             onClick={handleGeneratePrompts}
             disabled={isLoadingPrompts || isStreaming}
-            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 border border-brand-200 hover:border-brand-400 hover:bg-brand-100 text-brand-700 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
+            className="whitespace-nowrap px-2.5 py-1 rounded-full bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800 hover:border-brand-400 hover:bg-brand-100 dark:hover:bg-brand-900/60 text-brand-700 dark:text-brand-300 transition text-[11px] font-medium flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
             title="Analyze document with AI and generate smart prompt suggestions"
           >
             {isLoadingPrompts ? (
               <>
-                <Loader2 className="w-3 h-3 animate-spin text-brand-600" />
+                <Loader2 className="w-3 h-3 animate-spin text-brand-600 dark:text-brand-400" />
                 <span>Analyzing document...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-3 h-3 text-brand-600" />
+                <Sparkles className="w-3 h-3 text-brand-600 dark:text-brand-400" />
                 <span>{prompts.length > 0 ? 'Refresh Prompts' : 'Suggest Prompts'}</span>
               </>
             )}
@@ -391,7 +391,7 @@ export default function RightPanelAI({
               onClick={() => handleSend(qp.prompt)}
               disabled={isStreaming}
               title={qp.prompt}
-              className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white border border-slate-200 hover:border-brand-500/50 hover:text-brand-600 text-slate-700 transition text-[11px] disabled:opacity-40 shrink-0 cursor-pointer"
+              className="whitespace-nowrap px-2.5 py-1 rounded-full bg-white dark:bg-[#1e1e24] border border-slate-200 dark:border-[#2b2b36] hover:border-brand-500/50 hover:text-brand-600 dark:hover:text-brand-400 text-slate-700 dark:text-slate-200 transition text-[11px] disabled:opacity-40 shrink-0 cursor-pointer"
             >
               {qp.label}
             </button>
@@ -406,7 +406,7 @@ export default function RightPanelAI({
             key={m.id}
             className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}
           >
-            <div className="flex items-center space-x-1.5 mb-1 text-[10px] text-slate-500">
+            <div className="flex items-center space-x-1.5 mb-1 text-[10px] text-slate-500 dark:text-slate-400">
               {m.sender === 'ai' ? (
                 <>
                   <Bot className="w-3 h-3 text-brand-400" />
@@ -415,7 +415,7 @@ export default function RightPanelAI({
               ) : (
                 <>
                   <span>You</span>
-                  <User className="w-3 h-3 text-slate-600" />
+                  <User className="w-3 h-3 text-slate-600 dark:text-slate-400" />
                 </>
               )}
             </div>
@@ -424,7 +424,7 @@ export default function RightPanelAI({
               className={`p-3 rounded-2xl max-w-[92%] leading-relaxed ${
                 m.sender === 'user'
                   ? 'bg-brand-600 text-white rounded-tr-sm'
-                  : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm'
+                  : 'bg-white dark:bg-[#1e1e23] border border-slate-200 dark:border-[#282832] text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-sm'
               }`}
             >
               <div className="whitespace-pre-wrap">{renderMessageTextWithCitations(m.text)}</div>
@@ -443,7 +443,7 @@ export default function RightPanelAI({
               <span>Custumu Copilot is thinking...</span>
             </div>
 
-            <div className="p-3 rounded-2xl max-w-[92%] leading-relaxed bg-white border border-brand-500/40 text-slate-800 rounded-tl-sm shadow-md shadow-brand-500/5">
+            <div className="p-3 rounded-2xl max-w-[92%] leading-relaxed bg-white dark:bg-[#1e1e23] border border-brand-500/40 text-slate-800 dark:text-slate-100 rounded-tl-sm shadow-md shadow-brand-500/5">
               <div className="whitespace-pre-wrap">
                 {renderMessageTextWithCitations(streamedText)}
                 <span className="inline-block w-1.5 h-3.5 bg-brand-400 animate-pulse ml-0.5 align-middle" />
@@ -456,7 +456,7 @@ export default function RightPanelAI({
       </div>
 
       {/* Input Bar */}
-      <div className="p-3 bg-white">
+      <div className="p-3 bg-white dark:bg-[#161619] border-t border-slate-200/60 dark:border-[#27272e]">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -464,7 +464,7 @@ export default function RightPanelAI({
               handleSend(input);
             }
           }}
-          className="rounded-2xl border border-slate-200 bg-white p-2.5 shadow-xs focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500/20 transition flex flex-col"
+          className="rounded-2xl border border-slate-200 dark:border-[#282834] bg-white dark:bg-[#1c1c21] p-2.5 shadow-xs focus-within:border-brand-500 focus-within:ring-1 focus-within:ring-brand-500/20 transition flex flex-col"
         >
           <textarea
             ref={textareaRef}
@@ -481,7 +481,7 @@ export default function RightPanelAI({
             }}
             disabled={isStreaming}
             placeholder="Ask question or tell Custumu what to do..."
-            className="w-full bg-transparent border-0 outline-none text-xs text-slate-800 placeholder-slate-400 resize-none p-1 focus:ring-0 leading-relaxed max-h-32 min-h-[44px]"
+            className="w-full bg-transparent border-0 outline-none text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 resize-none p-1 focus:ring-0 leading-relaxed max-h-32 min-h-[44px]"
           />
 
           <div className="flex items-center justify-between pt-2 mt-1">

@@ -12,7 +12,7 @@ function AppContent() {
 
   return (
     <div
-      className={`bg-slate-50 text-slate-800 flex flex-col selection:bg-brand-500 selection:text-white ${isEditor ? 'h-screen overflow-hidden' : 'min-h-screen'}`}
+      className={`bg-[var(--bg-app)] text-[var(--text-primary)] dark:bg-[#101012] dark:text-slate-100 flex flex-col selection:bg-brand selection:text-white transition-colors duration-150 ${isEditor ? 'h-screen overflow-hidden' : 'min-h-screen'}`}
     >
       <Toast />
       <Navbar />

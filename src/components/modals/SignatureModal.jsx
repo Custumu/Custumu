@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Eraser, Check, Stamp } from 'lucide-react';
 
 export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
@@ -61,20 +61,20 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
 
   return (
     <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
-      <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div className="bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-2xl max-w-lg w-full p-6 shadow-2xl text-slate-800 dark:text-slate-100">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
               <Stamp className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Create E-Signature</h3>
-              <p className="text-xs text-slate-600">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Create E-Signature</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
                 Draw your signature with your mouse or stylus
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded text-slate-600 hover:text-slate-900">
+          <button onClick={onClose} className="p-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>

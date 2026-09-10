@@ -13,7 +13,7 @@ export default function LandingPage() {
       {/* Active Document Banner if a document is currently loaded in memory */}
       {docBuffer && (
         <div className="max-w-xl mx-auto w-full px-4 pt-6 animate-fade-in">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between text-xs text-blue-900 shadow-sm">
+          <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 rounded-xl p-3 flex items-center justify-between text-xs text-blue-900 dark:text-blue-200 shadow-sm">
             <div className="flex items-center space-x-2.5 truncate">
               <FileText className="w-4 h-4 text-blue-600 shrink-0" />
               <span className="truncate font-medium">

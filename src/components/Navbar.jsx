@@ -45,7 +45,19 @@ export default function Navbar(props) {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const toolsMenuRef = useRef(null);
+  const toolsTimeoutRef = useRef(null);
   const exportMenuRef = useRef(null);
+
+  const handleToolsMouseEnter = () => {
+    if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
+    setShowToolsMenu(true);
+  };
+
+  const handleToolsMouseLeave = () => {
+    toolsTimeoutRef.current = setTimeout(() => {
+      setShowToolsMenu(false);
+    }, 180);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -61,6 +73,7 @@ export default function Navbar(props) {
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
     };
   }, [showToolsMenu, showExportMenu]);
 
@@ -153,26 +166,31 @@ export default function Navbar(props) {
             </button>
           </div> */}
 
-          {/* Multi-Column Tools & Conversion Popover */}
-          <div className="relative" ref={toolsMenuRef}>
+          {/* Multi-Column Tools & Conversion Navigation Menu */}
+          <div
+            className="relative py-1.5"
+            ref={toolsMenuRef}
+            onMouseEnter={handleToolsMouseEnter}
+            onMouseLeave={handleToolsMouseLeave}
+          >
             <button
               onClick={() => {
                 setShowToolsMenu(!showToolsMenu);
                 setShowExportMenu(false);
               }}
-              className={`flex items-center space-x-2 border text-xs sm:text-sm font-medium px-3.5 sm:px-4 py-1.5 rounded-lg transition cursor-pointer shadow-xs ${
+              className={`flex items-center space-x-1 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 showToolsMenu
-                  ? 'bg-slate-100 border-slate-300 text-slate-900'
-                  : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                  ? 'text-[#205ae3] bg-blue-50/80'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <LayoutGrid className="w-4 h-4 text-slate-500" />
               <span>Tools</span>
-              <ChevronDown className={`w-3.5 h-3.5 ml-0.5 opacity-80 transition-transform ${showToolsMenu ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3]' : ''}`} />
             </button>
 
-              {showToolsMenu && (
-                <div className="absolute right-0 mt-2 w-[540px] max-w-[95vw] bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden text-slate-800 animate-fade-in">
+            {showToolsMenu && (
+              <div className="absolute right-0 top-full pt-1 w-[540px] max-w-[95vw] z-50 animate-fade-in">
+                <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden text-slate-800">
                   <div className="grid grid-cols-2 divide-x divide-slate-100">
                     
                     {/* Column 1: Native Functionality */}
@@ -305,8 +323,9 @@ export default function Navbar(props) {
 
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
             {/* Export Dropdown - visible when a document is in use */}
             {hasDocument && (

@@ -24,7 +24,7 @@ import {
 } from '../services/enterpriseAi';
 
 // Toggle for Option 1: Set to false to disable automatic suggestions on document load
-const AUTO_SUGGEST_ON_LOAD = true;
+const AUTO_SUGGEST_ON_LOAD = false;
 
 export default function RightPanelAI({
   documentMetadata,

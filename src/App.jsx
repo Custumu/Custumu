@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import HeroDropzone from './components/HeroDropzone';
 import LeftPanelPages from './components/LeftPanelPages';
@@ -43,6 +44,10 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isEditor = location.pathname === '/editor';
+
   // Document state
   const [docBuffer, setDocBuffer] = useState(null);
   const [docName, setDocName] = useState('');
@@ -152,6 +157,7 @@ export default function App() {
       });
 
       showToast(`Loaded ${name} (${meta.pageCount} pages)`);
+      navigate('/editor');
     } catch (err) {
       console.error('Failed to load PDF', err);
       showToast('Failed to parse PDF document.', 'error');
@@ -168,6 +174,7 @@ export default function App() {
       setThumbnails([]);
       setHistory([]);
       setHistoryIndex(-1);
+      navigate('/');
     }
   };
 
@@ -533,7 +540,7 @@ export default function App() {
   };
 
   return (
-    <div className={`bg-slate-50 text-slate-800 flex flex-col selection:bg-brand-500 selection:text-white ${docBuffer ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+    <div className={`bg-slate-50 text-slate-800 flex flex-col selection:bg-brand-500 selection:text-white ${isEditor ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-20 right-6 z-50 animate-slide-up">
@@ -546,12 +553,12 @@ export default function App() {
 
       {/* Navigation */}
       <Navbar
-        hasDocument={Boolean(docBuffer)}
+        hasDocument={isEditor && Boolean(docBuffer)}
         documentName={docName}
         pageCount={docMeta.pageCount}
         isPrivateMode={isPrivateMode}
         setIsPrivateMode={setIsPrivateMode}
-        onResetDocument={handleResetDocument}
+        onResetDocument={isEditor ? handleResetDocument : () => navigate('/')}
         onExportPdf={handleExportPdf}
         onExportWord={handleExportWord}
         onExportExcel={handleExportExcel}
@@ -577,121 +584,155 @@ export default function App() {
         canRedo={historyIndex < history.length - 1}
       />
 
-      {/* Main Content Area */}
-      {!docBuffer ? (
-        <main className="flex-1 flex flex-col justify-center">
-          <HeroDropzone
-            onFileLoaded={(buf, name, prompt) => loadBuffer(buf, name, prompt)}
-          />
-        </main>
-      ) : (
-        <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-          {/* Top Quick Tools Ribbon */}
-          <div className="h-9 bg-white border-b border-slate-200/90 px-4 flex items-center justify-between text-xs shrink-0 z-20 shadow-2xs">
-            <div className="flex items-center space-x-1.5">
-              <span className="text-slate-500 text-[11px] font-medium hidden sm:inline">Tools:</span>
-              <button
-                onClick={() => setIsMergeModalOpen(true)}
-                className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
-              >
-                <Merge className="w-3 h-3 text-indigo-500" />
-                <span>Merge</span>
-              </button>
+      <Routes>
+        {/* Root Path: Landing Page */}
+        <Route
+          path="/"
+          element={
+            <main className="flex-1 flex flex-col justify-center">
+              {docBuffer && (
+                <div className="max-w-xl mx-auto w-full px-4 pt-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center justify-between text-xs text-blue-900 shadow-sm">
+                    <div className="flex items-center space-x-2 truncate">
+                      <FileText className="w-4 h-4 text-blue-600 shrink-0" />
+                      <span className="truncate font-medium">Active document in editor: {docName}</span>
+                    </div>
+                    <button
+                      onClick={() => navigate('/editor')}
+                      className="px-3 py-1.5 bg-[#205ae3] hover:bg-[#184cc8] text-white font-medium rounded-lg transition shrink-0 ml-2 cursor-pointer text-xs"
+                    >
+                      Return to Editor &rarr;
+                    </button>
+                  </div>
+                </div>
+              )}
+              <HeroDropzone
+                onFileLoaded={(buf, name, prompt) => loadBuffer(buf, name, prompt)}
+              />
+            </main>
+          }
+        />
 
-              <button
-                onClick={() => setIsSplitModalOpen(true)}
-                className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
-              >
-                <Split className="w-3 h-3 text-cyan-600" />
-                <span>Split</span>
-              </button>
+        {/* Editor Path: Full 3-Panel Editor Layout */}
+        <Route
+          path="/editor"
+          element={
+            !docBuffer ? (
+              <Navigate to="/" replace />
+            ) : (
+              <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                {/* Top Quick Tools Ribbon */}
+                <div className="h-9 bg-white border-b border-slate-200/90 px-4 flex items-center justify-between text-xs shrink-0 z-20 shadow-2xs">
+                  <div className="flex items-center space-x-1.5">
+                    <span className="text-slate-500 text-[11px] font-medium hidden sm:inline">Tools:</span>
+                    <button
+                      onClick={() => setIsMergeModalOpen(true)}
+                      className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
+                    >
+                      <Merge className="w-3 h-3 text-indigo-500" />
+                      <span>Merge</span>
+                    </button>
 
-              <button
-                onClick={() => setIsCompressModalOpen(true)}
-                className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
-              >
-                <Minimize2 className="w-3 h-3 text-amber-500" />
-                <span>Compress</span>
-              </button>
+                    <button
+                      onClick={() => setIsSplitModalOpen(true)}
+                      className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
+                    >
+                      <Split className="w-3 h-3 text-cyan-600" />
+                      <span>Split</span>
+                    </button>
 
-              <button
-                onClick={() => setIsOcrModalOpen(true)}
-                className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
-              >
-                <ScanText className="w-3 h-3 text-emerald-600" />
-                <span>OCR</span>
-              </button>
+                    <button
+                      onClick={() => setIsCompressModalOpen(true)}
+                      className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
+                    >
+                      <Minimize2 className="w-3 h-3 text-amber-500" />
+                      <span>Compress</span>
+                    </button>
 
-              <button
-                onClick={handleExportWord}
-                className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
-              >
-                <FileText className="w-3 h-3 text-blue-500" />
-                <span>→ Word</span>
-              </button>
+                    <button
+                      onClick={() => setIsOcrModalOpen(true)}
+                      className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
+                    >
+                      <ScanText className="w-3 h-3 text-emerald-600" />
+                      <span>OCR</span>
+                    </button>
 
-              <button
-                onClick={() => handleExportExcel()}
-                className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
-              >
-                <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
-                <span>→ Excel</span>
-              </button>
-            </div>
+                    <button
+                      onClick={handleExportWord}
+                      className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
+                    >
+                      <FileText className="w-3 h-3 text-blue-500" />
+                      <span>→ Word</span>
+                    </button>
 
-            <div className="flex items-center space-x-3">
-              <div className="flex items-center space-x-1.5 text-[11px] text-slate-700 font-medium">
-                <Sparkles className="w-3 h-3 text-brand-500" />
-                <span>AI Engine Connected</span>
+                    <button
+                      onClick={() => handleExportExcel()}
+                      className="px-2 py-1 rounded-md hover:bg-slate-100 text-slate-700 hover:text-slate-900 flex items-center gap-1.5 transition text-[11px] cursor-pointer"
+                    >
+                      <FileSpreadsheet className="w-3 h-3 text-emerald-600" />
+                      <span>→ Excel</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-1.5 text-[11px] text-slate-700 font-medium">
+                      <Sparkles className="w-3 h-3 text-brand-500" />
+                      <span>AI Engine Connected</span>
+                    </div>
+                    <span className="text-slate-300 hidden md:inline">|</span>
+                    <div className="text-[11px] text-slate-500 hidden md:inline">
+                      custumu.com • {isPrivateMode ? '🛡️ Local WASM Engine' : '⚡ Cloud Enclave'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3-Panel Grid */}
+                <div className="flex-1 flex overflow-hidden min-h-0">
+                  {/* Left: Real Page Thumbnails */}
+                  <LeftPanelPages
+                    pages={docMeta.pages}
+                    thumbnails={thumbnails}
+                    activePageIndex={activePageIndex}
+                    setActivePageIndex={setActivePageIndex}
+                    onRotatePage={handleRotatePage}
+                    onDeletePage={handleDeletePage}
+                    onDuplicatePage={handleDuplicatePage}
+                    onMovePage={handleMovePage}
+                    onAddPage={handleAddPage}
+                    onOpenSplitModal={() => setIsSplitModalOpen(true)}
+                  />
+
+                  {/* Center: Real PDF Canvas Viewer & Interactive Annotations */}
+                  <CenterCanvas
+                    docBuffer={docBuffer}
+                    activePageIndex={activePageIndex}
+                    totalPages={docMeta.pageCount}
+                    setActivePageIndex={setActivePageIndex}
+                    onOpenSignatureModal={() => setIsSignatureModalOpen(true)}
+                    annotations={annotations}
+                    setAnnotations={setAnnotations}
+                    onAddWatermark={handleAddWatermark}
+                  />
+
+                  {/* Right: Enterprise AI Copilot */}
+                  <RightPanelAI
+                    documentMetadata={docMeta}
+                    documentContext={docContext}
+                    onExecuteAiAction={handleExecuteAiAction}
+                    onExportExcel={handleExportExcel}
+                    onExportWord={handleExportWord}
+                    onJumpToPage={(targetIdx) => setActivePageIndex(targetIdx)}
+                    initialPrompt={initialPrompt}
+                  />
+                </div>
               </div>
-              <span className="text-slate-300 hidden md:inline">|</span>
-              <div className="text-[11px] text-slate-500 hidden md:inline">
-                custumu.com • {isPrivateMode ? '🛡️ Local WASM Engine' : '⚡ Cloud Enclave'}
-              </div>
-            </div>
-          </div>
+            )
+          }
+        />
 
-          {/* 3-Panel Grid */}
-          <div className="flex-1 flex overflow-hidden min-h-0">
-            {/* Left: Real Page Thumbnails */}
-            <LeftPanelPages
-              pages={docMeta.pages}
-              thumbnails={thumbnails}
-              activePageIndex={activePageIndex}
-              setActivePageIndex={setActivePageIndex}
-              onRotatePage={handleRotatePage}
-              onDeletePage={handleDeletePage}
-              onDuplicatePage={handleDuplicatePage}
-              onMovePage={handleMovePage}
-              onAddPage={handleAddPage}
-              onOpenSplitModal={() => setIsSplitModalOpen(true)}
-            />
-
-            {/* Center: Real PDF Canvas Viewer & Interactive Annotations */}
-            <CenterCanvas
-              docBuffer={docBuffer}
-              activePageIndex={activePageIndex}
-              totalPages={docMeta.pageCount}
-              setActivePageIndex={setActivePageIndex}
-              onOpenSignatureModal={() => setIsSignatureModalOpen(true)}
-              annotations={annotations}
-              setAnnotations={setAnnotations}
-              onAddWatermark={handleAddWatermark}
-            />
-
-            {/* Right: Enterprise AI Copilot */}
-            <RightPanelAI
-              documentMetadata={docMeta}
-              documentContext={docContext}
-              onExecuteAiAction={handleExecuteAiAction}
-              onExportExcel={handleExportExcel}
-              onExportWord={handleExportWord}
-              onJumpToPage={(targetIdx) => setActivePageIndex(targetIdx)}
-              initialPrompt={initialPrompt}
-            />
-          </div>
-        </div>
-      )}
+        {/* Catch-all: Redirect unknown routes to "/" */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
 
       {/* Modals */}
       <SignatureModal

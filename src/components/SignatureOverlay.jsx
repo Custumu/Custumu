@@ -20,10 +20,14 @@ export default function SignatureOverlay({
   // Pure derived state: when eraser tool is active, nothing can be selected
   const effectiveSelectedId = activeTool === 'eraser' ? null : selectedSignatureId;
 
-  // Memoized signatures and pen drawings for the current active page
+  // Memoized signatures, pen drawings, and highlights for the current active page
   const pageItems = useMemo(() => {
     return annotations
-      .filter((a) => (a.type === 'signature' || a.type === 'draw') && a.pageIndex === activePageIndex)
+      .filter(
+        (a) =>
+          (a.type === 'signature' || a.type === 'draw' || a.type === 'highlight') &&
+          a.pageIndex === activePageIndex
+      )
       .map((a, idx) => ({
         ...a,
         id: a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`,
@@ -61,9 +65,9 @@ export default function SignatureOverlay({
           })
         );
       } else if (type === 'resize') {
-        const isDraw = startAnno.type === 'draw';
-        const MIN_WIDTH = isDraw ? 20 : 45;
-        const MIN_HEIGHT = isDraw ? 16 : 18;
+        const isSmallItem = startAnno.type === 'draw' || startAnno.type === 'highlight';
+        const MIN_WIDTH = isSmallItem ? 15 : 45;
+        const MIN_HEIGHT = isSmallItem ? 12 : 18;
 
         let newWidth = startAnno.width;
         let newHeight = startAnno.height;
@@ -253,10 +257,11 @@ export default function SignatureOverlay({
         const heightPx = (anno.height / baseHeight) * displayHeight;
 
         // When in eraser mode, all overlay items pass pointer events through to canvas eraser
-        // When in draw mode, unselected drawings should not block new pen strokes
+        // When in draw or highlight mode, unselected drawings/highlights should not block new strokes
+        const isDrawingOrHighlighting = activeTool === 'draw' || activeTool === 'highlight';
         const isInteractive =
           activeTool !== 'eraser' &&
-          (isSelected || activeTool === 'select' || (activeTool !== 'draw' && anno.type === 'signature'));
+          (isSelected || activeTool === 'select' || (!isDrawingOrHighlighting && anno.type === 'signature'));
 
         return (
           <div
@@ -289,9 +294,20 @@ export default function SignatureOverlay({
           >
             <img
               src={anno.dataUrl}
-              alt={anno.type === 'draw' ? 'Pen Drawing' : 'Stamped Signature'}
+              alt={
+                anno.type === 'draw'
+                  ? 'Pen Drawing'
+                  : anno.type === 'highlight'
+                  ? 'Highlight'
+                  : 'Stamped Signature'
+              }
               draggable={false}
               className="w-full h-full object-contain pointer-events-none select-none"
+              style={
+                anno.type === 'highlight'
+                  ? { opacity: anno.opacity || 0.45, mixBlendMode: 'multiply' }
+                  : undefined
+              }
             />
 
             {/* Handles and delete button when selected */}
@@ -309,7 +325,13 @@ export default function SignatureOverlay({
                     );
                     setSelectedSignatureId(null);
                   }}
-                  title={anno.type === 'draw' ? 'Delete drawing (or press Delete)' : 'Delete signature (or press Delete)'}
+                  title={
+                    anno.type === 'draw'
+                      ? 'Delete drawing (or press Delete)'
+                      : anno.type === 'highlight'
+                      ? 'Delete highlight (or press Delete)'
+                      : 'Delete signature (or press Delete)'
+                  }
                   className="absolute -top-3.5 -right-3.5 w-6 h-6 rounded-full bg-white dark:bg-slate-800 text-rose-500 hover:text-white hover:bg-rose-500 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center cursor-pointer transition-colors"
                   style={{ zIndex: 30, pointerEvents: 'auto' }}
                 >
@@ -320,28 +342,52 @@ export default function SignatureOverlay({
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'nw')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'nw')}
-                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
+                  title={
+                    anno.type === 'draw'
+                      ? 'Resize drawing'
+                      : anno.type === 'highlight'
+                      ? 'Resize highlight'
+                      : 'Resize signature'
+                  }
                   className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
                   style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'ne')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'ne')}
-                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
+                  title={
+                    anno.type === 'draw'
+                      ? 'Resize drawing'
+                      : anno.type === 'highlight'
+                      ? 'Resize highlight'
+                      : 'Resize signature'
+                  }
                   className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
                   style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'se')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'se')}
-                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
+                  title={
+                    anno.type === 'draw'
+                      ? 'Resize drawing'
+                      : anno.type === 'highlight'
+                      ? 'Resize highlight'
+                      : 'Resize signature'
+                  }
                   className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
                   style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />
                 <div
                   onPointerDown={(e) => handleStartResize(e, anno, 'sw')}
                   onMouseDown={(e) => handleStartResize(e, anno, 'sw')}
-                  title={anno.type === 'draw' ? 'Resize drawing' : 'Resize signature'}
+                  title={
+                    anno.type === 'draw'
+                      ? 'Resize drawing'
+                      : anno.type === 'highlight'
+                      ? 'Resize highlight'
+                      : 'Resize signature'
+                  }
                   className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
                   style={{ zIndex: 30, pointerEvents: 'auto' }}
                 />

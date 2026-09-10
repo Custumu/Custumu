@@ -282,9 +282,11 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
       const pageAnnotations = annotations.filter((a) => a.pageIndex === pageIndex);
       const ratio = viewport.width / 612;
 
-      // 1. Highlight layer: render all highlights onto an offscreen canvas so overlaps merge uniformly
-      const highlightAnnos = pageAnnotations.filter((a) => a.type === 'highlight');
-      if (highlightAnnos.length > 0) {
+      // 1. Highlight layer: render legacy highlights without dataUrl onto an offscreen canvas
+      const legacyHighlightAnnos = pageAnnotations.filter(
+        (a) => a.type === 'highlight' && !a.dataUrl
+      );
+      if (legacyHighlightAnnos.length > 0) {
         const hCanvas = document.createElement('canvas');
         hCanvas.width = canvas.width;
         hCanvas.height = canvas.height;
@@ -295,7 +297,7 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
         hCtx.lineCap = 'round';
         hCtx.lineJoin = 'round';
 
-        highlightAnnos.forEach((anno) => {
+        legacyHighlightAnnos.forEach((anno) => {
           if (!anno.points || anno.points.length === 0) return;
           hCtx.beginPath();
           if (anno.points.length === 1) {
@@ -324,9 +326,9 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
         ctx.restore();
       }
 
-      // 2. Preload image-based annotations (signatures and drawings) so they render with 100% reliability
+      // 2. Preload image-based annotations (signatures, drawings, and highlights) so they render with 100% reliability
       const imageAnnos = pageAnnotations.filter(
-        (a) => (a.type === 'signature' || a.type === 'draw') && a.dataUrl
+        (a) => (a.type === 'signature' || a.type === 'draw' || a.type === 'highlight') && a.dataUrl
       );
       const loadedImages = await Promise.all(
         imageAnnos.map((anno) => {
@@ -343,7 +345,7 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
         if (img) imageMap.set(anno, img);
       });
 
-      // 3. Other annotations (pen, redact, text, signature)
+      // 3. Other annotations (pen, highlight, redact, text, signature)
       pageAnnotations.forEach((anno) => {
         if (anno.type === 'draw') {
           const img = imageMap.get(anno);
@@ -371,6 +373,20 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
               else ctx.lineTo(px, py);
             });
             ctx.stroke();
+          }
+        } else if (anno.type === 'highlight' && anno.dataUrl && anno.width && anno.height) {
+          const img = imageMap.get(anno);
+          if (img) {
+            ctx.save();
+            ctx.globalAlpha = anno.opacity || 0.42;
+            ctx.drawImage(
+              img,
+              anno.x * ratio,
+              anno.y * ratio,
+              anno.width * ratio,
+              anno.height * ratio
+            );
+            ctx.restore();
           }
         } else if (anno.type === 'redact') {
           ctx.fillStyle = '#000000';

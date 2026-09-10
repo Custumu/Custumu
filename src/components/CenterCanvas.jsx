@@ -168,10 +168,9 @@ export default function CenterCanvas({
     const pageAnnotations = annotations.filter((a) => a.pageIndex === activePageIndex);
 
     // 1. Unified Highlight Layer:
-    // Render all highlights (both committed on this page and active live stroke) onto an offscreen canvas
-    // using solid opaque color. When overlapping strokes are drawn with opacity 1.0, they seamlessly merge
-    // into a single contiguous shape without darkening. Then we blit the unified layer with a fixed 0.42 alpha.
-    const highlightAnnos = pageAnnotations.filter((a) => a.type === 'highlight');
+    // Render legacy highlights and active live stroke onto an offscreen canvas.
+    // Committed overlay highlights are rendered in SignatureOverlay so they are movable & resizable.
+    const highlightAnnos = pageAnnotations.filter((a) => a.type === 'highlight' && !a.dataUrl);
     const isLiveHighlighting =
       activeLiveType === 'highlight' && activeLivePath && activeLivePath.length > 0;
 
@@ -276,9 +275,9 @@ export default function CenterCanvas({
           continue;
         }
 
-        // 1. Signatures and Pen Drawings with image data (Pixel Precision Erasing)
+        // 1. Signatures, Pen Drawings, and Highlights with image data (Pixel Precision Erasing)
         if (
-          (anno.type === 'signature' || anno.type === 'draw') &&
+          (anno.type === 'signature' || anno.type === 'draw' || anno.type === 'highlight') &&
           anno.dataUrl &&
           anno.width &&
           anno.height &&
@@ -316,10 +315,17 @@ export default function CenterCanvas({
             let painted = false;
 
             // 1. Direct vector rasterization if points are available (crisp & instantaneous)
-            if (anno.type === 'draw' && anno.points && anno.points.length > 0 && !anno.isErased) {
-              offCtx.strokeStyle = anno.color || PEN_COLOR;
-              offCtx.fillStyle = anno.color || PEN_COLOR;
-              offCtx.lineWidth = (anno.strokeWidth || 3) * dpr;
+            if (
+              (anno.type === 'draw' || anno.type === 'highlight') &&
+              anno.points &&
+              anno.points.length > 0 &&
+              !anno.isErased
+            ) {
+              const strokeColor = anno.type === 'highlight' ? HIGHLIGHT_COLOR : (anno.color || PEN_COLOR);
+              const sw = (anno.strokeWidth || (anno.type === 'highlight' ? 18 : 3)) * dpr;
+              offCtx.strokeStyle = strokeColor;
+              offCtx.fillStyle = strokeColor;
+              offCtx.lineWidth = sw;
               offCtx.lineCap = 'round';
               offCtx.lineJoin = 'round';
               offCtx.beginPath();
@@ -327,7 +333,7 @@ export default function CenterCanvas({
                 offCtx.arc(
                   (anno.points[0].x - anno.x) * dpr,
                   (anno.points[0].y - anno.y) * dpr,
-                  ((anno.strokeWidth || 3) * dpr) / 2,
+                  sw / 2,
                   0,
                   Math.PI * 2
                 );
@@ -354,10 +360,12 @@ export default function CenterCanvas({
             }
 
             // 3. Fallback to vector points even if isErased was set
-            if (!painted && anno.type === 'draw' && anno.points && anno.points.length > 0) {
-              offCtx.strokeStyle = anno.color || PEN_COLOR;
-              offCtx.fillStyle = anno.color || PEN_COLOR;
-              offCtx.lineWidth = (anno.strokeWidth || 3) * dpr;
+            if (!painted && (anno.type === 'draw' || anno.type === 'highlight') && anno.points && anno.points.length > 0) {
+              const strokeColor = anno.type === 'highlight' ? HIGHLIGHT_COLOR : (anno.color || PEN_COLOR);
+              const sw = (anno.strokeWidth || (anno.type === 'highlight' ? 18 : 3)) * dpr;
+              offCtx.strokeStyle = strokeColor;
+              offCtx.fillStyle = strokeColor;
+              offCtx.lineWidth = sw;
               offCtx.lineCap = 'round';
               offCtx.lineJoin = 'round';
               offCtx.beginPath();
@@ -365,7 +373,7 @@ export default function CenterCanvas({
                 offCtx.arc(
                   (anno.points[0].x - anno.x) * dpr,
                   (anno.points[0].y - anno.y) * dpr,
-                  ((anno.strokeWidth || 3) * dpr) / 2,
+                  sw / 2,
                   0,
                   Math.PI * 2
                 );
@@ -425,8 +433,8 @@ export default function CenterCanvas({
           continue;
         }
 
-        // 2. Highlighter strokes: split into separate path segments
-        if (anno.type === 'highlight' && anno.points && anno.points.length > 0) {
+        // 2. Legacy Highlighter strokes: split into separate path segments
+        if (anno.type === 'highlight' && !anno.dataUrl && anno.points && anno.points.length > 0) {
           const hitRadiusSq = (ERASER_RADIUS + 12) ** 2;
           let touched = false;
           const newSegments = [];
@@ -718,12 +726,94 @@ export default function CenterCanvas({
     } else if (activeTool === 'highlight') {
       const finalPath = currentPath.length > 0 ? currentPath : [{ x, y }];
       if (finalPath.length > 0) {
+        const strokeWidth = 18;
+        const pad = 12;
+        const xs = finalPath.map((p) => p.x);
+        const ys = finalPath.map((p) => p.y);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const minY = Math.min(...ys);
+        const maxY = Math.max(...ys);
+
+        const rawWidth = Math.max(1, maxX - minX);
+        const rawHeight = Math.max(1, maxY - minY);
+        const boxWidth = Math.max(28, rawWidth + pad * 2);
+        const boxHeight = Math.max(24, rawHeight + pad * 2);
+
+        // Center stroke within padded bounding box
+        const offsetX = (boxWidth - rawWidth) / 2;
+        const offsetY = (boxHeight - rawHeight) / 2;
+        const boxX = Math.max(0, minX - offsetX);
+        const boxY = Math.max(0, minY - offsetY);
+
+        // Generate transparent high-res PNG dataUrl for highlight
+        let pngDataUrl = null;
+        let createdCanvas = null;
+        let createdCtx = null;
+        const dpr = 2;
+        try {
+          const offCanvas = document.createElement('canvas');
+          offCanvas.width = Math.ceil(boxWidth * dpr);
+          offCanvas.height = Math.ceil(boxHeight * dpr);
+          const offCtx = offCanvas.getContext('2d');
+          if (offCtx) {
+            offCtx.strokeStyle = HIGHLIGHT_COLOR;
+            offCtx.fillStyle = HIGHLIGHT_COLOR;
+            offCtx.lineWidth = strokeWidth * dpr;
+            offCtx.lineCap = 'round';
+            offCtx.lineJoin = 'round';
+            offCtx.beginPath();
+            if (finalPath.length === 1) {
+              offCtx.arc(
+                (finalPath[0].x - boxX) * dpr,
+                (finalPath[0].y - boxY) * dpr,
+                (strokeWidth * dpr) / 2,
+                0,
+                Math.PI * 2
+              );
+              offCtx.fill();
+            } else {
+              finalPath.forEach((pt, idx) => {
+                const px = (pt.x - boxX) * dpr;
+                const py = (pt.y - boxY) * dpr;
+                if (idx === 0) offCtx.moveTo(px, py);
+                else offCtx.lineTo(px, py);
+              });
+              offCtx.stroke();
+            }
+            pngDataUrl = offCanvas.toDataURL('image/png');
+            createdCanvas = offCanvas;
+            createdCtx = offCtx;
+          }
+        } catch (err) {
+          console.warn('Could not generate offscreen PNG for highlight', err);
+        }
+
+        const hlId = `highlight-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        if (createdCanvas && createdCtx) {
+          persistentDrawingCanvasesRef.current.set(hlId, {
+            canvas: createdCanvas,
+            ctx: createdCtx,
+            dpr,
+          });
+        }
         setAnnotations((prev) => [
           ...prev,
           {
+            id: hlId,
             pageIndex: activePageIndex,
             type: 'highlight',
+            x: Math.round(boxX),
+            y: Math.round(boxY),
+            width: Math.round(boxWidth),
+            height: Math.round(boxHeight),
+            originalWidth: Math.round(boxWidth),
+            originalHeight: Math.round(boxHeight),
+            color: HIGHLIGHT_COLOR,
+            strokeWidth,
+            dataUrl: pngDataUrl,
             points: finalPath,
+            opacity: 0.45,
           },
         ]);
       }

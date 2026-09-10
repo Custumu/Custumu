@@ -367,7 +367,7 @@ export default function RightPanelAI({
       </div>
 
       {/* Quick Prompt Chips - Only show if PDF contains real text */}
-      {hasDocText && (
+      {/* {hasDocText && (
         <div className="px-3 py-2 border-b border-slate-200/60 dark:border-[#27272e] bg-white/40 dark:bg-[#161619]/40 flex items-center gap-1.5 overflow-x-auto text-[11px] no-scrollbar">
           <button
             onClick={handleGeneratePrompts}
@@ -400,7 +400,7 @@ export default function RightPanelAI({
             </button>
           ))}
         </div>
-      )}
+      )} */}
 
       {/* Messages Stream */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs">
@@ -459,7 +459,7 @@ export default function RightPanelAI({
       </div>
 
       {/* Input Bar */}
-      <div className="p-3 bg-white dark:bg-[#161619] border-t border-slate-200/60 dark:border-[#27272e]">
+      <div className="p-3 bg-white dark:bg-[#161619]">
         <form
           onSubmit={(e) => {
             e.preventDefault();

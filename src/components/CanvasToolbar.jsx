@@ -40,14 +40,14 @@ export default function CanvasToolbar({
             isTool: true,
             activeClass: brandActiveClass,
           },
-          {
-            id: 'text',
-            label: 'Text',
-            icon: Type,
-            title: 'Add Text Overlay',
-            isTool: true,
-            activeClass: brandActiveClass,
-          },
+          // {
+          //   id: 'text',
+          //   label: 'Text',
+          //   icon: Type,
+          //   title: 'Add Text Overlay',
+          //   isTool: true,
+          //   activeClass: brandActiveClass,
+          // },
           {
             id: 'draw',
             label: 'Pen',
@@ -83,17 +83,19 @@ export default function CanvasToolbar({
             icon: Stamp,
             title: 'e-Signature Pad',
             onClick: onOpenSignatureModal,
-            className: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c] border-transparent',
+            className:
+              'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c] border-transparent',
           },
-          {
-            id: 'watermark',
-            label: 'Watermark',
-            icon: Lock,
-            title: 'Watermark Document',
-            onClick: () => onAddWatermark('CONFIDENTIAL'),
-            className: 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c] border-transparent',
-            hideOnSmall: true,
-          },
+          // {
+          //   id: 'watermark',
+          //   label: 'Watermark',
+          //   icon: Lock,
+          //   title: 'Watermark Document',
+          //   onClick: () => onAddWatermark('CONFIDENTIAL'),
+          //   className:
+          //     'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#25252c] border-transparent',
+          //   hideOnSmall: true,
+          // },
         ],
       },
     ],
@@ -150,10 +152,10 @@ export default function CanvasToolbar({
       {/* Right: Zoom & View Controls */}
       <div className="flex items-center space-x-2">
         {/* Zoom controls */}
-        <div className="flex items-center space-x-1 bg-white dark:bg-[#161619] px-1.5 py-0.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-200/70 dark:border-[#27272e]">
+        <div className="flex items-center space-x-1 bg-white dark:bg-[#161619] px-1.5 py-0.5 text-slate-700 dark:text-slate-200">
           <button
             onClick={() => setZoom(Math.max(40, zoom - 15))}
-            className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-[#25252c] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            className="p-1 rounded-sm hover:bg-slate-100 dark:hover:bg-[#25252c] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
             title="Zoom Out"
           >
             <ZoomOut className="w-3.5 h-3.5" />
@@ -167,7 +169,7 @@ export default function CanvasToolbar({
           </button>
           <button
             onClick={() => setZoom(Math.min(200, zoom + 15))}
-            className="p-0.5 rounded hover:bg-slate-100 dark:hover:bg-[#25252c] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+            className="p-1 rounded-sm hover:bg-slate-100 dark:hover:bg-[#25252c] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
             title="Zoom In"
           >
             <ZoomIn className="w-3.5 h-3.5" />

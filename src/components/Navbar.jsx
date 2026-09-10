@@ -4,8 +4,6 @@ import {
   ShieldCheck,
   Cloud,
   Download,
-  RotateCcw,
-  RotateCw,
   FileText,
   Image,
   ChevronDown,
@@ -118,7 +116,7 @@ export default function Navbar(props) {
   return (
     <>
       <header className="h-16 border-b border-slate-200 dark:border-[#27272e] bg-white/90 dark:bg-[#161619]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0 transition-colors duration-150">
-        {/* Brand & Document Name */}
+        {/* Left: Brand & Tools Menu */}
         <div className="flex items-center space-x-3 sm:space-x-4">
           <div
             className="flex items-center space-x-2.5 cursor-pointer"
@@ -133,41 +131,32 @@ export default function Navbar(props) {
             </div>
           </div>
 
-          {/* Active File Pill - only visible when a document is loaded */}
-          {hasDocument && documentName && (
-            <div className="hidden md:flex items-center space-x-2 text-xs text-slate-700 dark:text-slate-300 bg-slate-100/80 dark:bg-[#202026] px-2.5 py-1 rounded-full border border-slate-200/60 dark:border-[#2b2b34]">
-              <FileText className="w-3.5 h-3.5 text-brand-400" />
-              <span className="font-medium truncate max-w-[200px]">{documentName}</span>
-            </div>
-          )}
-        </div>
-
-        {/* Center: Undo / Redo - only visible when a document is in use */}
-        {hasDocument && (
-          <div className="hidden lg:flex items-center space-x-1 bg-white/60 dark:bg-[#1c1c21] p-1 rounded-lg border border-slate-200 dark:border-[#27272e]">
+          {/* Multi-Column Tools & Conversion Navigation Menu */}
+          <div
+            className="relative py-1.5"
+            ref={toolsMenuRef}
+            onMouseEnter={handleToolsMouseEnter}
+            onMouseLeave={handleToolsMouseLeave}
+          >
             <button
-              onClick={onUndo}
-              disabled={!canUndo}
-              className={`p-1.5 rounded transition ${canUndo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#282832]' : 'text-slate-400 dark:text-slate-600 cursor-not-allowed'}`}
-              title="Undo (Ctrl+Z)"
+              onClick={() => {
+                setShowToolsMenu(!showToolsMenu);
+                setShowExportMenu(false);
+              }}
+              className={`flex items-center space-x-1 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-lg transition cursor-pointer ${
+                showToolsMenu
+                  ? 'text-[#205ae3] bg-blue-50/80 dark:bg-blue-950/40 dark:text-blue-400'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c]'
+              }`}
             >
-              <RotateCcw className="w-4 h-4" />
+              <span>Tools</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3] dark:text-blue-400' : ''}`}
+              />
             </button>
-            <button
-              onClick={onRedo}
-              disabled={!canRedo}
-              className={`p-1.5 rounded transition ${canRedo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#282832]' : 'text-slate-400 dark:text-slate-600 cursor-not-allowed'}`}
-              title="Redo (Ctrl+Y)"
-            >
-              <RotateCw className="w-4 h-4" />
-            </button>
-          </div>
-        )}
 
-        {/* Right: Tools Popover (Always Visible) & Export */}
-        <div className="flex items-center space-x-2 sm:space-x-2.5">
-          {/* Privacy Switcher Badge */}
-          {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
+            {/* Privacy Switcher Badge */}
+            {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
             <button
               onClick={() => setIsPrivateMode(true)}
               className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
@@ -201,46 +190,8 @@ export default function Navbar(props) {
             </button>
           </div> */}
 
-          {/* Theme Mode Toggle Button */}
-          <button
-            onClick={toggleTheme}
-            className="p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c] transition cursor-pointer"
-            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            {isDark ? (
-              <Sun className="w-4 h-4 text-amber-400" />
-            ) : (
-              <Moon className="w-4 h-4 text-slate-600 hover:text-slate-900" />
-            )}
-          </button>
-
-          {/* Multi-Column Tools & Conversion Navigation Menu */}
-          <div
-            className="relative py-1.5"
-            ref={toolsMenuRef}
-            onMouseEnter={handleToolsMouseEnter}
-            onMouseLeave={handleToolsMouseLeave}
-          >
-            <button
-              onClick={() => {
-                setShowToolsMenu(!showToolsMenu);
-                setShowExportMenu(false);
-              }}
-              className={`flex items-center space-x-1 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                showToolsMenu
-                  ? 'text-[#205ae3] bg-blue-50/80 dark:bg-blue-950/40 dark:text-blue-400'
-                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c]'
-              }`}
-            >
-              <span>Tools</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3] dark:text-blue-400' : ''}`}
-              />
-            </button>
-
             {showToolsMenu && (
-              <div className="absolute right-0 top-full pt-1 w-[540px] max-w-[95vw] z-50 animate-fade-in">
+              <div className="absolute left-0 top-full pt-1 w-[540px] max-w-[95vw] z-50 animate-fade-in">
                 <div className="bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-2xl shadow-2xl overflow-hidden text-slate-800 dark:text-slate-200">
                   <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-[#27272e]">
                     {/* Column 1: Native Functionality */}
@@ -459,6 +410,23 @@ export default function Navbar(props) {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Right: Theme Toggle & Export */}
+        <div className="flex items-center space-x-2 sm:space-x-2.5">
+          {/* Theme Mode Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-1.5 sm:p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c] transition cursor-pointer"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDark ? (
+              <Sun className="w-4 h-4 text-amber-400" />
+            ) : (
+              <Moon className="w-4 h-4 text-slate-600 hover:text-slate-900" />
+            )}
+          </button>
 
           {/* Export Dropdown - visible when a document is in use */}
           {hasDocument && (
@@ -485,7 +453,9 @@ export default function Navbar(props) {
                   >
                     <FileText className="w-4 h-4 text-rose-500 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">Export as PDF (.pdf)</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                        Export as PDF (.pdf)
+                      </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         Includes all annotations & edits
                       </div>
@@ -500,7 +470,9 @@ export default function Navbar(props) {
                   >
                     <Image className="w-4 h-4 text-cyan-600 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">Export as PNG (.png)</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                        Export as PNG (.png)
+                      </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400">
                         Current page or all pages (High-Res)
                       </div>
@@ -515,8 +487,12 @@ export default function Navbar(props) {
                   >
                     <FileText className="w-4 h-4 text-blue-500 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">Export as Word (.doc)</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Editable text & headings</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                        Export as Word (.doc)
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Editable text & headings
+                      </div>
                     </div>
                   </button>
                   <button
@@ -528,8 +504,12 @@ export default function Navbar(props) {
                   >
                     <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
                     <div>
-                      <div className="font-bold text-slate-900 dark:text-slate-100">Export Tables to Excel (.xlsx)</div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">Spreadsheet table parser</div>
+                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                        Export Tables to Excel (.xlsx)
+                      </div>
+                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Spreadsheet table parser
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -551,7 +531,9 @@ export default function Navbar(props) {
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                   Custumu Dual Privacy Engine
                 </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400">custumu.com enterprise guarantee</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  custumu.com enterprise guarantee
+                </p>
               </div>
             </div>
 

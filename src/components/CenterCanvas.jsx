@@ -19,9 +19,12 @@ export default function CenterCanvas({
   const textLayerRef = useRef(null);
   const annotationCanvasRef = useRef(null);
   const highlightOffscreenRef = useRef(null);
+  const eraserCanvasCacheRef = useRef(new Map());
+  const lastEraserPosRef = useRef(null);
   const [zoom, setZoom] = useState(100);
-  const [activeTool, setActiveTool] = useState('select'); // 'select' | 'text' | 'draw' | 'highlight' | 'redact'
+  const [activeTool, setActiveTool] = useState('select'); // 'select' | 'text' | 'draw' | 'highlight' | 'redact' | 'eraser'
   const [isDrawing, setIsDrawing] = useState(false);
+  const [isErasing, setIsErasing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [currentPath, setCurrentPath] = useState([]);
   const [textInputPos, setTextInputPos] = useState(null);
@@ -247,6 +250,187 @@ export default function CenterCanvas({
     renderAnnotations();
   }, [activePageIndex, annotations, canvasDimensions]);
 
+  // Helper to compute distance squared from point (px, py) to line segment (x1, y1)-(x2, y2)
+  const distToSegmentSquared = (px, py, x1, y1, x2, y2) => {
+    const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+    if (l2 === 0) return (px - x1) ** 2 + (py - y1) ** 2;
+    let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    return (px - (x1 + t * (x2 - x1))) ** 2 + (py - (y1 + t * (y2 - y1))) ** 2;
+  };
+
+  // Pixel-precision section eraser using destination-out
+  const eraseSection = (fromX, fromY, toX, toY) => {
+    const ERASER_RADIUS = 12;
+    const ERASER_RADIUS_SQ = ERASER_RADIUS ** 2;
+
+    let annotationsChanged = false;
+
+    setAnnotations((prev) => {
+      const updatedAnnos = [];
+
+      for (const anno of prev) {
+        if (anno.pageIndex !== activePageIndex) {
+          updatedAnnos.push(anno);
+          continue;
+        }
+
+        // 1. Signatures and Pen Drawings with image data (Pixel Precision Erasing)
+        if (
+          (anno.type === 'signature' || anno.type === 'draw') &&
+          anno.dataUrl &&
+          anno.width &&
+          anno.height &&
+          anno.x !== undefined &&
+          anno.y !== undefined
+        ) {
+          const segMinX = Math.min(fromX, toX) - ERASER_RADIUS;
+          const segMaxX = Math.max(fromX, toX) + ERASER_RADIUS;
+          const segMinY = Math.min(fromY, toY) - ERASER_RADIUS;
+          const segMaxY = Math.max(fromY, toY) + ERASER_RADIUS;
+
+          const overlaps =
+            segMaxX >= anno.x &&
+            segMinX <= anno.x + anno.width &&
+            segMaxY >= anno.y &&
+            segMinY <= anno.y + anno.height;
+
+          if (!overlaps) {
+            updatedAnnos.push(anno);
+            continue;
+          }
+
+          // Retrieve or create offscreen working canvas from cache
+          let cacheEntry = eraserCanvasCacheRef.current.get(anno.id);
+          if (!cacheEntry) {
+            const dpr = 2;
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = Math.max(1, Math.round(anno.width * dpr));
+            offCanvas.height = Math.max(1, Math.round(anno.height * dpr));
+            const offCtx = offCanvas.getContext('2d');
+
+            const domImg = document.querySelector(`[data-annotation-id="${anno.id}"] img`);
+            if (domImg && domImg.complete && domImg.naturalWidth > 0) {
+              offCtx.drawImage(domImg, 0, 0, offCanvas.width, offCanvas.height);
+            } else {
+              const img = new Image();
+              img.src = anno.dataUrl;
+              if (img.complete) {
+                offCtx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
+              }
+            }
+            cacheEntry = { canvas: offCanvas, ctx: offCtx, dpr };
+            eraserCanvasCacheRef.current.set(anno.id, cacheEntry);
+          }
+
+          const { canvas, ctx: offCtx } = cacheEntry;
+
+          const scaleW = canvas.width / anno.width;
+          const scaleH = canvas.height / anno.height;
+          const lx1 = (fromX - anno.x) * scaleW;
+          const ly1 = (fromY - anno.y) * scaleH;
+          const lx2 = (toX - anno.x) * scaleW;
+          const ly2 = (toY - anno.y) * scaleH;
+          const lr = ERASER_RADIUS * ((scaleW + scaleH) / 2);
+
+          offCtx.save();
+          offCtx.globalCompositeOperation = 'destination-out';
+          offCtx.lineWidth = lr * 2;
+          offCtx.lineCap = 'round';
+          offCtx.lineJoin = 'round';
+          offCtx.beginPath();
+          offCtx.moveTo(lx1, ly1);
+          offCtx.lineTo(lx2, ly2);
+          offCtx.stroke();
+          offCtx.beginPath();
+          offCtx.arc(lx2, ly2, lr, 0, Math.PI * 2);
+          offCtx.fill();
+          offCtx.restore();
+
+          const updatedDataUrl = canvas.toDataURL('image/png');
+          annotationsChanged = true;
+
+          updatedAnnos.push({
+            ...anno,
+            dataUrl: updatedDataUrl,
+            isErased: true,
+          });
+          continue;
+        }
+
+        // 2. Highlighter strokes: split into separate path segments
+        if (anno.type === 'highlight' && anno.points && anno.points.length > 0) {
+          const hitRadiusSq = (ERASER_RADIUS + 12) ** 2;
+          let touched = false;
+          const newSegments = [];
+          let currentSegment = [];
+
+          for (let i = 0; i < anno.points.length; i++) {
+            const pt = anno.points[i];
+            const distSq = distToSegmentSquared(pt.x, pt.y, fromX, fromY, toX, toY);
+            if (distSq <= hitRadiusSq) {
+              touched = true;
+              if (currentSegment.length > 1) {
+                newSegments.push(currentSegment);
+              }
+              currentSegment = [];
+            } else {
+              currentSegment.push(pt);
+            }
+          }
+          if (currentSegment.length > 1) {
+            newSegments.push(currentSegment);
+          }
+
+          if (touched) {
+            annotationsChanged = true;
+            newSegments.forEach((seg, sIdx) => {
+              updatedAnnos.push({
+                ...anno,
+                id: `${anno.id || 'hl'}-split-${Date.now()}-${sIdx}`,
+                points: seg,
+              });
+            });
+            continue;
+          } else {
+            updatedAnnos.push(anno);
+            continue;
+          }
+        }
+
+        // 3. Text annotations: delete if touched
+        if (anno.type === 'text' && anno.x !== undefined && anno.y !== undefined) {
+          const textW = (anno.text?.length || 6) * 9;
+          const textH = 18;
+          const textX = anno.x;
+          const textY = anno.y - textH;
+          const nearX = Math.max(textX, Math.min(toX, textX + textW));
+          const nearY = Math.max(textY, Math.min(toY, textY + textH));
+          const distSq = (toX - nearX) ** 2 + (toY - nearY) ** 2;
+          if (distSq <= ERASER_RADIUS_SQ) {
+            annotationsChanged = true;
+            continue;
+          }
+        }
+
+        // 4. Redact boxes: delete if touched
+        if (anno.type === 'redact' && anno.width && anno.height) {
+          const nearX = Math.max(anno.x, Math.min(toX, anno.x + anno.width));
+          const nearY = Math.max(anno.y, Math.min(toY, anno.y + anno.height));
+          const distSq = (toX - nearX) ** 2 + (toY - nearY) ** 2;
+          if (distSq <= ERASER_RADIUS_SQ) {
+            annotationsChanged = true;
+            continue;
+          }
+        }
+
+        updatedAnnos.push(anno);
+      }
+
+      return annotationsChanged ? updatedAnnos : prev;
+    });
+  };
+
   const handleMouseDown = (e) => {
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
@@ -256,7 +440,11 @@ export default function CenterCanvas({
     const x = ((e.clientX - rect.left) / rect.width) * baseWidth;
     const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
 
-    if (activeTool === 'draw' || activeTool === 'highlight') {
+    if (activeTool === 'eraser') {
+      setIsErasing(true);
+      lastEraserPosRef.current = { x, y };
+      eraseSection(x, y, x, y);
+    } else if (activeTool === 'draw' || activeTool === 'highlight') {
       setIsDrawing(true);
       const initialPath = [{ x, y }];
       setCurrentPath(initialPath);
@@ -270,7 +458,6 @@ export default function CenterCanvas({
   };
 
   const handleMouseMove = (e) => {
-    if (!isDrawing) return;
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -278,6 +465,17 @@ export default function CenterCanvas({
     const baseHeight = canvasDimensions.baseHeight || 792;
     const x = ((e.clientX - rect.left) / rect.width) * baseWidth;
     const y = ((e.clientY - rect.top) / rect.height) * baseHeight;
+
+    if (activeTool === 'eraser') {
+      if (isErasing && lastEraserPosRef.current) {
+        const fromPos = lastEraserPosRef.current;
+        eraseSection(fromPos.x, fromPos.y, x, y);
+        lastEraserPosRef.current = { x, y };
+      }
+      return;
+    }
+
+    if (!isDrawing) return;
 
     if (activeTool === 'draw' || activeTool === 'highlight') {
       const nextPath = [...currentPath, { x, y }];
@@ -293,6 +491,37 @@ export default function CenterCanvas({
   };
 
   const handleMouseUp = (e) => {
+    if (activeTool === 'eraser') {
+      setIsErasing(false);
+      lastEraserPosRef.current = null;
+
+      // Check if any canvas in cache was completely erased (100% transparent)
+      if (eraserCanvasCacheRef.current.size > 0) {
+        const fullyErasedIds = new Set();
+        for (const [id, { canvas, ctx }] of eraserCanvasCacheRef.current.entries()) {
+          try {
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+            let hasPixels = false;
+            for (let i = 3; i < imgData.length; i += 16) {
+              if (imgData[i] > 10) {
+                hasPixels = true;
+                break;
+              }
+            }
+            if (!hasPixels) {
+              fullyErasedIds.add(id);
+            }
+          } catch (err) {
+            console.warn('Could not inspect canvas alpha', err);
+          }
+        }
+        if (fullyErasedIds.size > 0) {
+          setAnnotations((prev) => prev.filter((a) => !fullyErasedIds.has(a.id)));
+        }
+        eraserCanvasCacheRef.current.clear();
+      }
+      return;
+    }
     if (!isDrawing) return;
     setIsDrawing(false);
     const canvas = annotationCanvasRef.current;
@@ -482,6 +711,10 @@ export default function CenterCanvas({
   const getToolCursor = () => {
     if (activeTool === 'select') return 'default';
     if (activeTool === 'text') return 'text';
+    if (activeTool === 'eraser') {
+      // Circular dashed red eraser target matching 12px contact radius
+      return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Ccircle cx='14' cy='14' r='12' fill='rgba(239,68,68,0.18)' stroke='%23ef4444' stroke-width='1.5' stroke-dasharray='3 2'/%3E%3Ccircle cx='14' cy='14' r='1.5' fill='%23ef4444'/%3E%3C/svg%3E") 14 14, crosshair`;
+    }
     // Slightly larger hollow circle with a soft slate-600 border and no fill
     return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23475569' stroke-width='1.5'/%3E%3C/svg%3E") 16 16, auto`;
   };

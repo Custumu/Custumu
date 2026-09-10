@@ -7,9 +7,18 @@ export default function SignatureOverlay({
   activePageIndex,
   canvasDimensions,
   activeTool = 'select',
+  selectedSignatureId: externalSelectedId,
+  setSelectedSignatureId: externalSetSelectedId,
 }) {
-  const [selectedSignatureId, setSelectedSignatureId] = useState(null);
+  const [internalSelectedId, setInternalSelectedId] = useState(null);
   const [interactionState, setInteractionState] = useState(null);
+
+  const selectedSignatureId =
+    externalSelectedId !== undefined ? externalSelectedId : internalSelectedId;
+  const setSelectedSignatureId = externalSetSelectedId || setInternalSelectedId;
+
+  // Pure derived state: when eraser tool is active, nothing can be selected
+  const effectiveSelectedId = activeTool === 'eraser' ? null : selectedSignatureId;
 
   // Memoized signatures and pen drawings for the current active page
   const pageItems = useMemo(() => {
@@ -20,15 +29,6 @@ export default function SignatureOverlay({
         id: a.id || `${a.type || 'item'}-${a.pageIndex}-${idx}`,
       }));
   }, [annotations, activePageIndex]);
-
-  // Automatically select newly stamped signatures or newly drawn strokes
-  const [prevItemCount, setPrevItemCount] = useState(pageItems.length);
-  if (pageItems.length !== prevItemCount) {
-    setPrevItemCount(pageItems.length);
-    if (pageItems.length > prevItemCount) {
-      setSelectedSignatureId(pageItems[pageItems.length - 1]?.id || null);
-    }
-  }
 
   // Window pointer & mouse listeners for moving and resizing items smoothly
   useEffect(() => {
@@ -241,7 +241,7 @@ export default function SignatureOverlay({
   return (
     <>
       {pageItems.map((anno) => {
-        const isSelected = selectedSignatureId === anno.id;
+        const isSelected = effectiveSelectedId === anno.id;
         const baseWidth = canvasDimensions.baseWidth || 612;
         const baseHeight = canvasDimensions.baseHeight || 792;
         const displayWidth = canvasDimensions.width || 612;
@@ -252,14 +252,17 @@ export default function SignatureOverlay({
         const widthPx = (anno.width / baseWidth) * displayWidth;
         const heightPx = (anno.height / baseHeight) * displayHeight;
 
+        // When in eraser mode, all overlay items pass pointer events through to canvas eraser
         // When in draw mode, unselected drawings should not block new pen strokes
         const isInteractive =
-          isSelected || activeTool === 'select' || (activeTool !== 'draw' && anno.type === 'signature');
+          activeTool !== 'eraser' &&
+          (isSelected || activeTool === 'select' || (activeTool !== 'draw' && anno.type === 'signature'));
 
         return (
           <div
             key={anno.id}
             data-signature-overlay="true"
+            data-annotation-id={anno.id}
             onPointerDown={(e) => {
               if (isInteractive) handleStartMove(e, anno);
             }}
@@ -284,7 +287,7 @@ export default function SignatureOverlay({
               pointerEvents: isInteractive ? 'auto' : 'none',
             }}
           >
-            {anno.type === 'draw' && anno.svgPath ? (
+            {anno.type === 'draw' && anno.svgPath && !anno.isErased ? (
               <svg
                 viewBox={`0 0 ${anno.originalWidth || anno.width} ${anno.originalHeight || anno.height}`}
                 className="w-full h-full pointer-events-none select-none overflow-visible"

@@ -29,7 +29,7 @@ async function streamViaServerApi(prompt, conversationHistory, documentContext, 
 
   const endpoint = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
     ? 'http://localhost:5000/api/ai/chat'
-    : '/api/ai/chat';
+    : 'https://api.custumu.com/api/ai/chat';
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -203,7 +203,7 @@ export async function fetchSuggestedPrompts(documentText = '', pageCount = 1) {
   try {
     const endpoint = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
       ? 'http://localhost:5000/api/ai/suggest-prompts'
-      : '/api/ai/suggest-prompts';
+      : 'https://api.custumu.com/api/ai/suggest-prompts';
 
     const res = await fetch(endpoint, {
       method: 'POST',

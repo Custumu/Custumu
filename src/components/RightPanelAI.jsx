@@ -299,10 +299,16 @@ export default function RightPanelAI({
         {/* Card Header */}
         <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70 dark:border-[#27272e]">
           <div className="flex items-center space-x-2">
-            <div className="p-1 rounded-md bg-white dark:bg-[#1e1e23] border border-slate-200 dark:border-[#2b2b34] shadow-2xs">{icon}</div>
+            <div className="p-1 rounded-md bg-white dark:bg-[#1e1e23] border border-slate-200 dark:border-[#2b2b34] shadow-2xs">
+              {icon}
+            </div>
             <div>
-              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">{title}</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400">Autonomous Action Ready</div>
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 tracking-tight">
+                {title}
+              </div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                Autonomous Action Ready
+              </div>
             </div>
           </div>
           <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-[rgba(252,181,0,0.15)] dark:bg-[rgba(252,181,0,0.22)] text-amber-950 dark:text-amber-300 border border-[rgba(252,181,0,0.35)]">
@@ -350,14 +356,11 @@ export default function RightPanelAI({
   return (
     <aside className="w-80 lg:w-96 border-l border-slate-200 dark:border-[#27272e] bg-white/95 dark:bg-[#161619]/95 backdrop-blur-sm flex flex-col h-full z-10 shrink-0 transition-colors duration-150">
       {/* Panel Header */}
-      <div className="p-3.5 border-b border-slate-200 dark:border-[#27272e] flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div className="p-1.5 rounded-lg bg-gradient-to-br from-brand-500 to-indigo-500 text-white shadow-sm">
-            <Sparkles className="w-3.5 h-3.5" />
-          </div>
+      <div className="p-3.5 border-b border-slate-200 dark:border-[#27272e] flex items-center justify-center">
+        <div className="flex items-center justify-center space-x-2">
           <div>
-            <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-              Enterprise AI Copilot
+            <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 flex items-center justify-center gap-1.5">
+              AI Copilot
             </div>
           </div>
         </div>

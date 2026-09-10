@@ -20,10 +20,13 @@ import {
   Layers,
   Sun,
   Moon,
+  User,
+  LogOut,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useDocument } from '../context/DocumentContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Navbar(props) {
   const docCtx = useDocument();
@@ -73,9 +76,12 @@ export default function Navbar(props) {
   const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const toolsMenuRef = useRef(null);
   const toolsTimeoutRef = useRef(null);
   const exportMenuRef = useRef(null);
+  const userMenuRef = useRef(null);
+  const { user, profile, signOut, openAuthModal } = useAuth();
 
   const handleToolsMouseEnter = () => {
     if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
@@ -96,15 +102,18 @@ export default function Navbar(props) {
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
         setShowExportMenu(false);
       }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setShowUserMenu(false);
+      }
     };
-    if (showToolsMenu || showExportMenu) {
+    if (showToolsMenu || showExportMenu || showUserMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
     };
-  }, [showToolsMenu, showExportMenu]);
+  }, [showToolsMenu, showExportMenu, showUserMenu]);
 
   const handleDownloadPdf = () => {
     setShowToolsMenu(false);
@@ -515,6 +524,69 @@ export default function Navbar(props) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* User Auth: Sign In Button or Profile Dropdown */}
+          {user ? (
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => {
+                  setShowUserMenu(!showUserMenu);
+                  setShowToolsMenu(false);
+                  setShowExportMenu(false);
+                }}
+                className="flex items-center space-x-2 p-1 pl-2 pr-2.5 rounded-xl border border-slate-200 dark:border-[#2f2f3a] bg-slate-50 dark:bg-[#1a1a20] hover:bg-slate-100 dark:hover:bg-[#24242c] transition cursor-pointer"
+              >
+                <div className="w-6 h-6 rounded-full bg-[#205ae3] text-white font-bold text-[11px] flex items-center justify-center uppercase shadow-xs">
+                  {profile?.full_name ? profile.full_name.charAt(0) : user.email?.charAt(0) || 'U'}
+                </div>
+                <span className="hidden sm:inline text-xs font-medium text-slate-800 dark:text-slate-200 max-w-[100px] truncate">
+                  {profile?.full_name || user.email?.split('@')[0]}
+                </span>
+                <ChevronDown
+                  className={`w-3 h-3 text-slate-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-xl shadow-2xl py-2 z-50 text-xs animate-fade-in divide-y divide-slate-100 dark:divide-[#27272e]">
+                  <div className="px-3.5 py-2">
+                    <p className="font-semibold text-slate-900 dark:text-white truncate">
+                      {profile?.full_name || 'Custumu Member'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      {user.email}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-1.5">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-[#205ae3] dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-900/60 uppercase tracking-wide">
+                        {profile?.tier || 'Free'} Plan
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        signOut();
+                      }}
+                      className="w-full text-left px-3.5 py-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center space-x-2 transition cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => openAuthModal('signin')}
+              className="flex items-center space-x-1.5 text-xs sm:text-sm font-medium px-3 py-1.5 rounded-lg border border-slate-200 dark:border-[#2f2f3a] text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#25252c] transition cursor-pointer"
+            >
+              <User className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span>Sign In</span>
+            </button>
           )}
         </div>
       </header>

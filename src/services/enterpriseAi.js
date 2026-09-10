@@ -1,3 +1,5 @@
+import { supabase } from './supabase';
+
 export function getAiConfig() {
   return {
     provider: 'openai',
@@ -40,6 +42,17 @@ async function streamViaServerApi(
   const headers = {
     'Content-Type': 'application/json',
   };
+
+  if (supabase) {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        headers['Authorization'] = `Bearer ${data.session.access_token}`;
+      }
+    } catch {
+      // Continue without token in guest mode
+    }
+  }
 
   const endpoint =
     typeof window !== 'undefined' && window.location.hostname === 'localhost'

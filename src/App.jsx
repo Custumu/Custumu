@@ -1,8 +1,10 @@
 import React from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { DocumentProvider } from './context/DocumentContext';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Toast from './components/Toast';
+import AuthModal from './components/modals/AuthModal';
 import LandingPage from './pages/LandingPage';
 import EditorPage from './pages/EditorPage';
 
@@ -16,6 +18,7 @@ function AppContent() {
     >
       <Toast />
       <Navbar />
+      <AuthModal />
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
@@ -28,8 +31,11 @@ function AppContent() {
 
 export default function App() {
   return (
-    <DocumentProvider>
-      <AppContent />
-    </DocumentProvider>
+    <AuthProvider>
+      <DocumentProvider>
+        <AppContent />
+      </DocumentProvider>
+    </AuthProvider>
   );
 }
+

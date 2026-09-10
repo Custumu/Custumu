@@ -556,6 +556,21 @@ export default function App() {
         onExportWord={handleExportWord}
         onExportExcel={handleExportExcel}
         onOpenPngModal={() => setIsPngModalOpen(true)}
+        onOpenMergeModal={() => setIsMergeModalOpen(true)}
+        onOpenSplitModal={() => setIsSplitModalOpen(true)}
+        onDeletePage={() => {
+          if (docMeta.pageCount <= 1) {
+            showToast('Document must contain at least 1 page.', 'error');
+            return;
+          }
+          if (window.confirm(`Delete current page (Page ${activePageIndex + 1})?`)) {
+            handleDeletePage(activePageIndex);
+          }
+        }}
+        onExtractPages={() => setIsSplitModalOpen(true)}
+        onOrganizePages={() => {
+          showToast('Use the left thumbnails panel to reorder, rotate, or duplicate pages', 'info');
+        }}
         onUndo={handleUndo}
         onRedo={handleRedo}
         canUndo={historyIndex > 0}

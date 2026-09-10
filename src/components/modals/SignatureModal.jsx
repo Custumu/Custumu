@@ -69,7 +69,9 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-900">Create E-Signature</h3>
-              <p className="text-xs text-slate-600">Draw your signature with your mouse or stylus</p>
+              <p className="text-xs text-slate-600">
+                Draw your signature with your mouse or stylus
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded text-slate-600 hover:text-slate-900">
@@ -125,4 +127,3 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
     </div>
   );
 }
-

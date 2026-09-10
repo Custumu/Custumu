@@ -1,19 +1,21 @@
 # Custumu — The AI Workspace for PDFs & Documents
 
 > **Domain:** [custumu.com](https://custumu.com)  
-> **Tagline:** *Your workspace for documents. Drop your PDF, tell us what you want, and we do it.*
+> **Tagline:** _Your workspace for documents. Drop your PDF, tell us what you want, and we do it._
 
 ---
 
 ## 🚀 Quick Start: How to Run Locally
 
 ### Prerequisites
+
 - Node.js 20+ installed
 - Git
 
 ---
 
 ### Terminal 1: Frontend (React 19 + Vite)
+
 Open a terminal in the root directory:
 
 ```bash
@@ -32,6 +34,7 @@ npm run dev
 ---
 
 ### Terminal 2: Backend Server (Express API & Real AI)
+
 Open a second terminal window:
 
 ```bash
@@ -55,10 +58,12 @@ npm start
 Custumu Enterprise Copilot is powered by the server-configured OpenAI API.
 
 Configure your API key in `server/.env`:
+
 ```env
 PORT=5000
 OPENAI_API_KEY=sk-...
 ```
+
 All users automatically route through this backend AI engine with zero setup required on the client.
 
 ---

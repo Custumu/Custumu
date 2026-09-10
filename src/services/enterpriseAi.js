@@ -16,20 +16,35 @@ export async function streamEnterpriseAiResponse({
   onToken,
 }) {
   const config = getAiConfig();
-  return await streamViaServerApi(prompt, conversationHistory, documentContext, documentMetadata, config, onToken);
+  return await streamViaServerApi(
+    prompt,
+    conversationHistory,
+    documentContext,
+    documentMetadata,
+    config,
+    onToken
+  );
 }
 
 /**
  * Real Backend SSE Stream Consumer
  */
-async function streamViaServerApi(prompt, conversationHistory, documentContext, documentMetadata, config, onToken) {
+async function streamViaServerApi(
+  prompt,
+  conversationHistory,
+  documentContext,
+  documentMetadata,
+  config,
+  onToken
+) {
   const headers = {
     'Content-Type': 'application/json',
   };
 
-  const endpoint = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
-    ? 'http://localhost:5000/api/ai/chat'
-    : 'https://api.custumu.com/api/ai/chat';
+  const endpoint =
+    typeof window !== 'undefined' && window.location.hostname === 'localhost'
+      ? 'http://localhost:5000/api/ai/chat'
+      : 'https://api.custumu.com/api/ai/chat';
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -49,7 +64,8 @@ async function streamViaServerApi(prompt, conversationHistory, documentContext, 
 
   if (!response.ok) {
     const errorPayload = await response.json().catch(() => ({}));
-    const errorMsg = errorPayload?.error || 'AI engine is currently busy. Please try again in a moment.';
+    const errorMsg =
+      errorPayload?.error || 'AI engine is currently busy. Please try again in a moment.';
     const helpMsg = `⚠️ **Custumu AI Notification**\n\n${errorMsg}`;
     onToken(helpMsg);
     return { text: helpMsg, action: null };
@@ -132,8 +148,8 @@ function mapToolCallToAction(toolName, args = {}) {
     const pageNumbers = Array.isArray(args.page_numbers)
       ? args.page_numbers
       : args.page_number
-      ? [args.page_number]
-      : [];
+        ? [args.page_number]
+        : [];
     return {
       type: 'DELETE_PAGES',
       pageNumbers,
@@ -146,8 +162,8 @@ function mapToolCallToAction(toolName, args = {}) {
     const pageNumbers = Array.isArray(args.page_numbers)
       ? args.page_numbers
       : args.page_number
-      ? [args.page_number]
-      : [];
+        ? [args.page_number]
+        : [];
     return {
       type: 'ROTATE_PAGES',
       pageNumbers,
@@ -201,9 +217,10 @@ function mapToolCallToAction(toolName, args = {}) {
  */
 export async function fetchSuggestedPrompts(documentText = '', pageCount = 1) {
   try {
-    const endpoint = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
-      ? 'http://localhost:5000/api/ai/suggest-prompts'
-      : 'https://api.custumu.com/api/ai/suggest-prompts';
+    const endpoint =
+      typeof window !== 'undefined' && window.location.hostname === 'localhost'
+        ? 'http://localhost:5000/api/ai/suggest-prompts'
+        : 'https://api.custumu.com/api/ai/suggest-prompts';
 
     const res = await fetch(endpoint, {
       method: 'POST',

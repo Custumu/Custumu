@@ -11,7 +11,7 @@ export default function CenterCanvas({
   onOpenSignatureModal,
   annotations,
   setAnnotations,
-  onAddWatermark
+  onAddWatermark,
 }) {
   const viewportRef = useRef(null);
   const pdfCanvasRef = useRef(null);
@@ -31,7 +31,7 @@ export default function CenterCanvas({
     height: 792,
     baseWidth: 612,
     baseHeight: 792,
-    dpr: 1
+    dpr: 1,
   });
   const [canvasRenderSuccess, setCanvasRenderSuccess] = useState(false);
 
@@ -90,12 +90,7 @@ export default function CenterCanvas({
 
             // Render selectable DOM text layer matching the active zoom and dimensions
             if (textLayerRef.current) {
-              await renderPdfTextLayer(
-                pdfDoc,
-                activePageIndex + 1,
-                textLayerRef.current,
-                zoom
-              );
+              await renderPdfTextLayer(pdfDoc, activePageIndex + 1, textLayerRef.current, zoom);
             }
           }
         }
@@ -150,7 +145,11 @@ export default function CenterCanvas({
   };
 
   // 2. Render Annotations onto annotationCanvasRef
-  const renderAnnotations = (activeLivePath = null, activeLiveType = null, liveRedactRect = null) => {
+  const renderAnnotations = (
+    activeLivePath = null,
+    activeLiveType = null,
+    liveRedactRect = null
+  ) => {
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -168,7 +167,8 @@ export default function CenterCanvas({
     // using solid opaque color. When overlapping strokes are drawn with opacity 1.0, they seamlessly merge
     // into a single contiguous shape without darkening. Then we blit the unified layer with a fixed 0.42 alpha.
     const highlightAnnos = pageAnnotations.filter((a) => a.type === 'highlight');
-    const isLiveHighlighting = activeLiveType === 'highlight' && activeLivePath && activeLivePath.length > 0;
+    const isLiveHighlighting =
+      activeLiveType === 'highlight' && activeLivePath && activeLivePath.length > 0;
 
     if (highlightAnnos.length > 0 || isLiveHighlighting) {
       if (!highlightOffscreenRef.current) {
@@ -224,7 +224,13 @@ export default function CenterCanvas({
       const img = new Image();
       img.src = anno.dataUrl;
       const drawSig = () => {
-        ctx.drawImage(img, anno.x * scaleX, anno.y * scaleY, anno.width * scaleX, anno.height * scaleY);
+        ctx.drawImage(
+          img,
+          anno.x * scaleX,
+          anno.y * scaleY,
+          anno.width * scaleX,
+          anno.height * scaleY
+        );
       };
       img.onload = drawSig;
       if (img.complete) drawSig();
@@ -404,10 +410,7 @@ export default function CenterCanvas({
       />
 
       {/* Main Real PDF Canvas Viewport */}
-      <div 
-        ref={viewportRef}
-        className="flex-1 overflow-auto p-6 md:p-8 flex flex-col items-center"
-      >
+      <div ref={viewportRef} className="flex-1 overflow-auto p-6 md:p-8 flex flex-col items-center">
         <div className="my-auto py-2 flex flex-col items-center">
           <div
             className="relative bg-white shadow-2xl rounded-sm select-none"

@@ -7,8 +7,8 @@ services:
       context: .
       dockerfile: Dockerfile.frontend
     ports:
-      - "80:80"
-      - "3000:80"
+      - '80:80'
+      - '3000:80'
     depends_on:
       - api
     restart: always
@@ -19,7 +19,7 @@ services:
       context: ./server
       dockerfile: Dockerfile.api
     ports:
-      - "5000:5000"
+      - '5000:5000'
     environment:
       - PORT=5000
       - REDIS_HOST=redis
@@ -45,7 +45,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis_data:/data
     restart: always

@@ -122,7 +122,15 @@ export async function addWatermarkToPdf(arrayBuffer, watermarkText = 'CONFIDENTI
 }
 
 // Add Stamped Signature
-export async function stampSignature(arrayBuffer, pageIndex, signaturePngDataUrl, x, y, width = 160, height = 60) {
+export async function stampSignature(
+  arrayBuffer,
+  pageIndex,
+  signaturePngDataUrl,
+  x,
+  y,
+  width = 160,
+  height = 60
+) {
   const pdfDoc = await PDFDocument.load(arrayBuffer);
   const page = pdfDoc.getPage(pageIndex);
   const signatureImage = await pdfDoc.embedPng(signaturePngDataUrl);
@@ -138,7 +146,15 @@ export async function stampSignature(arrayBuffer, pageIndex, signaturePngDataUrl
 }
 
 // Add Text Annotation
-export async function addTextToPage(arrayBuffer, pageIndex, text, x, y, size = 12, color = [0, 0, 0]) {
+export async function addTextToPage(
+  arrayBuffer,
+  pageIndex,
+  text,
+  x,
+  y,
+  size = 12,
+  color = [0, 0, 0]
+) {
   const pdfDoc = await PDFDocument.load(arrayBuffer);
   const page = pdfDoc.getPage(pageIndex);
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -204,7 +220,10 @@ export function exportTextToWord(title, contentText, filename = 'Custumu_Documen
   </head>
   <body>
   <h1>${title}</h1>
-  ${contentText.split('\n').map(p => p.trim() ? `<p>${p}</p>` : '').join('')}
+  ${contentText
+    .split('\n')
+    .map((p) => (p.trim() ? `<p>${p}</p>` : ''))
+    .join('')}
   </body>
   </html>`;
 
@@ -220,7 +239,6 @@ export function exportTextToWord(title, contentText, filename = 'Custumu_Documen
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
-
 
 /**
  * Convert a specific PDF page to high-res PNG image with guaranteed solid white background
@@ -261,11 +279,11 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
 
     // Overlay user annotations (drawings, signatures, redact boxes)
     if (annotations && annotations.length > 0) {
-      const pageAnnotations = annotations.filter(a => a.pageIndex === pageIndex);
+      const pageAnnotations = annotations.filter((a) => a.pageIndex === pageIndex);
       const ratio = viewport.width / 612;
 
       // 1. Highlight layer: render all highlights onto an offscreen canvas so overlaps merge uniformly
-      const highlightAnnos = pageAnnotations.filter(a => a.type === 'highlight');
+      const highlightAnnos = pageAnnotations.filter((a) => a.type === 'highlight');
       if (highlightAnnos.length > 0) {
         const hCanvas = document.createElement('canvas');
         hCanvas.width = canvas.width;
@@ -277,11 +295,17 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
         hCtx.lineCap = 'round';
         hCtx.lineJoin = 'round';
 
-        highlightAnnos.forEach(anno => {
+        highlightAnnos.forEach((anno) => {
           if (!anno.points || anno.points.length === 0) return;
           hCtx.beginPath();
           if (anno.points.length === 1) {
-            hCtx.arc(anno.points[0].x * (ratio || 1), anno.points[0].y * (ratio || 1), hCtx.lineWidth / 2, 0, Math.PI * 2);
+            hCtx.arc(
+              anno.points[0].x * (ratio || 1),
+              anno.points[0].y * (ratio || 1),
+              hCtx.lineWidth / 2,
+              0,
+              Math.PI * 2
+            );
             hCtx.fill();
           } else {
             anno.points.forEach((pt, idx) => {
@@ -301,7 +325,7 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
       }
 
       // 2. Other annotations (pen, redact, text)
-      pageAnnotations.forEach(anno => {
+      pageAnnotations.forEach((anno) => {
         if (anno.type === 'draw') {
           ctx.beginPath();
           ctx.strokeStyle = anno.color || '#0284C7';

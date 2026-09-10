@@ -1,5 +1,15 @@
 import React, { useRef, useState } from 'react';
-import { UploadCloud, FileText, Sparkles, Wand2, Shield, Zap, FileSpreadsheet, Scissors, Minimize2 } from 'lucide-react';
+import {
+  UploadCloud,
+  FileText,
+  Sparkles,
+  Wand2,
+  Shield,
+  Zap,
+  FileSpreadsheet,
+  Scissors,
+  Minimize2,
+} from 'lucide-react';
 
 export default function HeroDropzone({ onFileLoaded }) {
   const fileInputRef = useRef(null);
@@ -62,7 +72,8 @@ export default function HeroDropzone({ onFileLoaded }) {
       </h1>
 
       <p className="text-slate-600 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
-        Drop your document, tell us what you need, and Custumu handles it. Edit, convert, compress, extract tables, and chat with your files — in one unified workspace.
+        Drop your document, tell us what you need, and Custumu handles it. Edit, convert, compress,
+        extract tables, and chat with your files — in one unified workspace.
       </p>
 
       {/* Hero Dropzone Card */}
@@ -91,7 +102,8 @@ export default function HeroDropzone({ onFileLoaded }) {
           </div>
 
           <h3 className="text-lg font-semibold text-slate-900 mb-1">
-            Drop your PDF here, or <span className="text-brand-400 underline underline-offset-4">browse</span>
+            Drop your PDF here, or{' '}
+            <span className="text-brand-400 underline underline-offset-4">browse</span>
           </h3>
           <p className="text-xs text-slate-600 mb-6">
             Supports multi-page contracts, portfolios, invoices, scans, and financial documents
@@ -102,7 +114,10 @@ export default function HeroDropzone({ onFileLoaded }) {
             <div className="text-[11px] font-medium text-slate-600 uppercase tracking-wider mb-3">
               Choose your PDF to:
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2" onClick={(e) => e.stopPropagation()}>
+            <div
+              className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => handleQuickActionClick('Open in visual editor to annotate and sign')}
                 className="p-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 hover:text-slate-900 flex items-center justify-center space-x-1.5 transition"
@@ -128,7 +143,9 @@ export default function HeroDropzone({ onFileLoaded }) {
               </button>
 
               <button
-                onClick={() => handleQuickActionClick('What are the key takeaways of this document?')}
+                onClick={() =>
+                  handleQuickActionClick('What are the key takeaways of this document?')
+                }
                 className="p-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 hover:text-slate-900 flex items-center justify-center space-x-1.5 transition"
               >
                 <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
@@ -147,7 +164,8 @@ export default function HeroDropzone({ onFileLoaded }) {
           </div>
           <h4 className="text-sm font-semibold text-slate-900 mb-1">100% Private Mode</h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Manipulate, merge, and split PDFs entirely inside your browser's WebAssembly memory. Zero data touches servers.
+            Manipulate, merge, and split PDFs entirely inside your browser's WebAssembly memory.
+            Zero data touches servers.
           </p>
         </div>
 
@@ -157,7 +175,8 @@ export default function HeroDropzone({ onFileLoaded }) {
           </div>
           <h4 className="text-sm font-semibold text-slate-900 mb-1">Conversational Editing</h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Prompt "Remove page 2", "Add watermark", or "Compress under 5MB" and Custumu modifies the file in real-time.
+            Prompt "Remove page 2", "Add watermark", or "Compress under 5MB" and Custumu modifies
+            the file in real-time.
           </p>
         </div>
 
@@ -167,12 +186,11 @@ export default function HeroDropzone({ onFileLoaded }) {
           </div>
           <h4 className="text-sm font-semibold text-slate-900 mb-1">Unified 3-Panel Studio</h4>
           <p className="text-xs text-slate-600 leading-relaxed">
-            Pages panel on the left, visual canvas in the center, and AI assistant on the right. No navigating between 30 tabs.
+            Pages panel on the left, visual canvas in the center, and AI assistant on the right. No
+            navigating between 30 tabs.
           </p>
         </div>
       </div>
     </div>
   );
 }
-
-

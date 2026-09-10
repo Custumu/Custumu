@@ -32,9 +32,7 @@ export default function LandingPage() {
       )}
 
       {/* Hero Upload & Action Area */}
-      <HeroDropzone
-        onFileLoaded={(buf, name, prompt) => loadBuffer(buf, name, prompt)}
-      />
+      <HeroDropzone onFileLoaded={(buf, name, prompt) => loadBuffer(buf, name, prompt)} />
     </main>
   );
 }

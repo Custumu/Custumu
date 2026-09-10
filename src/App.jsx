@@ -11,7 +11,9 @@ function AppContent() {
   const isEditor = location.pathname === '/editor';
 
   return (
-    <div className={`bg-slate-50 text-slate-800 flex flex-col selection:bg-brand-500 selection:text-white ${isEditor ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+    <div
+      className={`bg-slate-50 text-slate-800 flex flex-col selection:bg-brand-500 selection:text-white ${isEditor ? 'h-screen overflow-hidden' : 'min-h-screen'}`}
+    >
       <Toast />
       <Navbar />
 

@@ -7,7 +7,7 @@ export default function PngModal({
   activePageIndex = 0,
   totalPages = 1,
   docName = 'document.pdf',
-  onExport
+  onExport,
 }) {
   const [scope, setScope] = useState('current'); // 'current' | 'all'
   const [scale, setScale] = useState(2); // 1 = 72dpi, 2 = 144dpi, 3 = 300dpi
@@ -35,7 +35,9 @@ export default function PngModal({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900">PDF to PNG Converter</h3>
-              <p className="text-[11px] text-slate-500">Render high-resolution PNG images from your PDF</p>
+              <p className="text-[11px] text-slate-500">
+                Render high-resolution PNG images from your PDF
+              </p>
             </div>
           </div>
           <button
@@ -63,7 +65,9 @@ export default function PngModal({
               >
                 <div>
                   <div className="text-xs font-bold">Current Page</div>
-                  <div className="text-[10px] text-slate-500">Page {activePageIndex + 1} of {totalPages}</div>
+                  <div className="text-[10px] text-slate-500">
+                    Page {activePageIndex + 1} of {totalPages}
+                  </div>
                 </div>
                 {scope === 'current' && <Check className="w-4 h-4 text-blue-600" />}
               </button>
@@ -88,7 +92,9 @@ export default function PngModal({
 
           {/* Resolution Selector */}
           <div>
-            <label className="text-xs font-semibold text-slate-700 block mb-2">Output Resolution / Quality</label>
+            <label className="text-xs font-semibold text-slate-700 block mb-2">
+              Output Resolution / Quality
+            </label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -135,7 +141,8 @@ export default function PngModal({
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start space-x-2">
             <Sparkles className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
             <span>
-              Direct browser rendering via WebAssembly. Preserves full colors, typography, images, and transparency.
+              Direct browser rendering via WebAssembly. Preserves full colors, typography, images,
+              and transparency.
             </span>
           </div>
         </div>
@@ -163,7 +170,10 @@ export default function PngModal({
             ) : (
               <>
                 <Download className="w-3.5 h-3.5" />
-                <span>Export PNG {scope === 'all' ? `(${totalPages} Pages)` : `(Page ${activePageIndex + 1})`}</span>
+                <span>
+                  Export PNG{' '}
+                  {scope === 'all' ? `(${totalPages} Pages)` : `(Page ${activePageIndex + 1})`}
+                </span>
               </>
             )}
           </button>

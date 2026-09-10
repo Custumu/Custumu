@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { 
-  Sparkles, 
-  Bot, 
-  User, 
-  FileSpreadsheet, 
-  Trash2, 
-  Minimize2, 
+import {
+  Sparkles,
+  Bot,
+  User,
+  FileSpreadsheet,
+  Trash2,
+  Minimize2,
   ExternalLink,
   Stamp,
   RotateCw,
@@ -15,9 +15,13 @@ import {
   CheckCircle2,
   Zap,
   Download,
-  ArrowUp
+  ArrowUp,
 } from 'lucide-react';
-import { streamEnterpriseAiResponse, getAiConfig, fetchSuggestedPrompts } from '../services/enterpriseAi';
+import {
+  streamEnterpriseAiResponse,
+  getAiConfig,
+  fetchSuggestedPrompts,
+} from '../services/enterpriseAi';
 
 // Toggle for Option 1: Set to false to disable automatic suggestions on document load
 const AUTO_SUGGEST_ON_LOAD = true;
@@ -29,7 +33,7 @@ export default function RightPanelAI({
   onExportExcel,
   onExportWord,
   onJumpToPage,
-  initialPrompt
+  initialPrompt,
 }) {
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
@@ -58,7 +62,9 @@ export default function RightPanelAI({
   const [prompts, setPrompts] = useState([]);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
 
-  const hasDocText = Boolean(documentContext?.fullText && documentContext.fullText.trim().length >= 20);
+  const hasDocText = Boolean(
+    documentContext?.fullText && documentContext.fullText.trim().length >= 20
+  );
 
   // Smart prompt suggestions generator
   const handleGeneratePrompts = useCallback(async () => {
@@ -150,7 +156,7 @@ export default function RightPanelAI({
           id: Date.now() + 1,
           sender: 'ai',
           text: `An error occurred during inference: ${err.message}`,
-        }
+        },
       ]);
       setStreamedText('');
       setIsStreaming(false);
@@ -215,11 +221,12 @@ export default function RightPanelAI({
     if (action.type === 'SPLIT_PDF') {
       icon = <Split className="w-3.5 h-3.5 text-brand-500" />;
       title = 'Split Document';
-      buttonLabel = action.mode === 'all_pages' 
-        ? 'Split All Pages' 
-        : action.pageNumbers?.length 
-        ? `Extract Page ${action.pageNumbers.join(', ')}`
-        : 'Split PDF';
+      buttonLabel =
+        action.mode === 'all_pages'
+          ? 'Split All Pages'
+          : action.pageNumbers?.length
+            ? `Extract Page ${action.pageNumbers.join(', ')}`
+            : 'Split PDF';
       badge = (
         <span className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200/80 font-medium">
           {action.mode === 'all_pages' ? 'All Individual Pages' : 'Custom Extract'}
@@ -292,9 +299,7 @@ export default function RightPanelAI({
         {/* Card Header */}
         <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/70">
           <div className="flex items-center space-x-2">
-            <div className="p-1 rounded-md bg-white border border-slate-200 shadow-2xs">
-              {icon}
-            </div>
+            <div className="p-1 rounded-md bg-white border border-slate-200 shadow-2xs">{icon}</div>
             <div>
               <div className="text-[11px] font-bold text-slate-800 tracking-tight">{title}</div>
               <div className="text-[10px] text-slate-500">Autonomous Action Ready</div>
@@ -311,11 +316,7 @@ export default function RightPanelAI({
         </p>
 
         {/* Details Badge */}
-        {badge && (
-          <div className="flex flex-wrap items-center gap-1.5 mb-3">
-            {badge}
-          </div>
-        )}
+        {badge && <div className="flex flex-wrap items-center gap-1.5 mb-3">{badge}</div>}
 
         {/* 1-Click Action Button */}
         {isExecuted ? (
@@ -426,9 +427,7 @@ export default function RightPanelAI({
                   : 'bg-white border border-slate-200 text-slate-800 rounded-tl-sm shadow-sm'
               }`}
             >
-              <div className="whitespace-pre-wrap">
-                {renderMessageTextWithCitations(m.text)}
-              </div>
+              <div className="whitespace-pre-wrap">{renderMessageTextWithCitations(m.text)}</div>
 
               {/* Visually Rich 1-Click Action Card */}
               {m.action && renderActionCard(m.action, m.id)}
@@ -486,9 +485,7 @@ export default function RightPanelAI({
           />
 
           <div className="flex items-center justify-between pt-2 mt-1">
-            <div className="flex items-center gap-2">
- 
-            </div>
+            <div className="flex items-center gap-2"></div>
 
             <button
               type="submit"

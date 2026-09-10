@@ -8,8 +8,10 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
   if (!isOpen) return null;
 
   const originalMb = (originalSizeBytes / (1024 * 1024)).toFixed(2);
-  const estimatedMb = (originalMb * (quality === 'extreme' ? 0.35 : quality === 'medium' ? 0.55 : 0.75)).toFixed(2);
-  const estimatedSavings = Math.round((1 - (estimatedMb / originalMb)) * 100);
+  const estimatedMb = (
+    originalMb * (quality === 'extreme' ? 0.35 : quality === 'medium' ? 0.55 : 0.75)
+  ).toFixed(2);
+  const estimatedSavings = Math.round((1 - estimatedMb / originalMb) * 100);
 
   const handleApply = () => {
     onApplyCompression(targetMb, quality);
@@ -103,4 +105,3 @@ export default function CompressModal({ isOpen, onClose, onApplyCompression, ori
     </div>
   );
 }
-

@@ -7,13 +7,15 @@ export async function getPdfJsLib() {
   if (typeof window === 'undefined') return null;
   if (window.pdfjsLib) {
     if (!window.pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
     return window.pdfjsLib;
   }
   if (window['pdfjs-dist/build/pdf']) {
     const lib = window['pdfjs-dist/build/pdf'];
-    lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    lib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     window.pdfjsLib = lib;
     return lib;
   }
@@ -26,7 +28,8 @@ export async function getPdfJsLib() {
       const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
       if (lib) {
         clearInterval(interval);
-        lib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        lib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         window.pdfjsLib = lib;
         resolve(lib);
       } else if (elapsed >= 3500) {
@@ -36,7 +39,8 @@ export async function getPdfJsLib() {
         script.onload = () => {
           const loadedLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
           if (loadedLib) {
-            loadedLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            loadedLib.GlobalWorkerOptions.workerSrc =
+              'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
             window.pdfjsLib = loadedLib;
           }
           resolve(loadedLib);
@@ -184,7 +188,7 @@ export async function renderPdfTextLayer(pdfDoc, pageNumber, container, zoom = 1
         textContent,
         container,
         viewport,
-        textDivs: []
+        textDivs: [],
       });
       container._currentTextLayerTask = task;
       await task.promise;
@@ -200,4 +204,3 @@ export async function renderPdfTextLayer(pdfDoc, pageNumber, container, zoom = 1
     return null;
   }
 }
-

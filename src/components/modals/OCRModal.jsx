@@ -5,8 +5,7 @@ export default function OCRModal({ isOpen, onClose, activePageIndex }) {
   const [isScanning, setIsScanning] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const sampleOcrText = 
-`[CUSTUMU OCR ENGINE - PAGE ${activePageIndex + 1} DETECTED TEXT]
+  const sampleOcrText = `[CUSTUMU OCR ENGINE - PAGE ${activePageIndex + 1} DETECTED TEXT]
 DOCUMENT ID: CST-2026-8942
 LANGUAGE: en-US (Confidence: 99.4%)
 RESOLUTION: 300 DPI Searchable Text Layer
@@ -59,7 +58,9 @@ Data Retention: In Private Mode, zero document data leaves client device memory.
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-900">OCR & Text Recognition</h3>
-              <p className="text-xs text-slate-600">Extract selectable, searchable text from document scans</p>
+              <p className="text-xs text-slate-600">
+                Extract selectable, searchable text from document scans
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded text-slate-600 hover:text-slate-900">
@@ -84,7 +85,11 @@ Data Retention: In Private Mode, zero document data leaves client device memory.
               onClick={handleCopy}
               className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs text-slate-200 transition"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? (
+                <Check className="w-3.5 h-3.5 text-emerald-400" />
+              ) : (
+                <Copy className="w-3.5 h-3.5" />
+              )}
               <span>{copied ? 'Copied' : 'Copy Text'}</span>
             </button>
 
@@ -101,4 +106,3 @@ Data Retention: In Private Mode, zero document data leaves client device memory.
     </div>
   );
 }
-

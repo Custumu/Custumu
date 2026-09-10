@@ -16,7 +16,7 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
       onApplySplit(ranges);
     } else {
       // Parse ranges like "1-2"
-      const parts = rangeInput.split('-').map(s => parseInt(s.trim(), 10) - 1);
+      const parts = rangeInput.split('-').map((s) => parseInt(s.trim(), 10) - 1);
       const start = Math.max(0, parts[0] || 0);
       const end = Math.min(totalPages - 1, parts[1] !== undefined ? parts[1] : start);
       const indices = [];
@@ -26,7 +26,7 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
         {
           name: `extracted_pages_${start + 1}_to_${end + 1}.pdf`,
           pageIndices: indices,
-        }
+        },
       ]);
     }
     onClose();
@@ -42,7 +42,9 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-900">Split & Extract Pages</h3>
-              <p className="text-xs text-slate-600">Extract page subsets or burst into individual files</p>
+              <p className="text-xs text-slate-600">
+                Extract page subsets or burst into individual files
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded text-slate-600 hover:text-slate-900">
@@ -61,7 +63,9 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
               }`}
             >
               <div className="text-xs font-semibold">Extract Every Page</div>
-              <div className="text-[10px] text-slate-600">Split into {totalPages} individual files</div>
+              <div className="text-[10px] text-slate-600">
+                Split into {totalPages} individual files
+              </div>
             </button>
 
             <button
@@ -103,4 +107,3 @@ export default function SplitModal({ isOpen, onClose, totalPages, onApplySplit }
     </div>
   );
 }
-

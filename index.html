@@ -5,11 +5,20 @@
     <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Custumu — The AI Workspace for Documents & PDFs</title>
-    <meta name="description" content="Your AI workspace for documents. Drop your PDF, tell us what you want, and we do it. Merge, edit, compress, convert, and chat with your documents." />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css" />
+    <meta
+      name="description"
+      content="Your AI workspace for documents. Drop your PDF, tell us what you want, and we do it. Merge, edit, compress, convert, and chat with your documents."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf_viewer.min.css"
+    />
     <!-- PDF.js CDN for robust client-side rendering without bundler conflicts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
@@ -17,11 +26,14 @@
         window.pdfjsLib = window['pdfjs-dist/build/pdf'];
       }
       if (window.pdfjsLib) {
-        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
       }
     </script>
   </head>
-  <body class="bg-slate-50 text-slate-900 min-h-screen antialiased selection:bg-brand-500 selection:text-white">
+  <body
+    class="bg-slate-50 text-slate-900 min-h-screen antialiased selection:bg-brand-500 selection:text-white"
+  >
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

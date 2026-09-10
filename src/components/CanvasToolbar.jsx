@@ -10,7 +10,7 @@ import {
   ZoomIn,
   ZoomOut,
   Maximize2,
-  Minimize2
+  Minimize2,
 } from 'lucide-react';
 
 export default function CanvasToolbar({
@@ -21,80 +21,85 @@ export default function CanvasToolbar({
   zoom,
   setZoom,
   onFitWidth,
-  onFitPage
+  onFitPage,
 }) {
   // Consistent brand color styling with soft translucent opacity
-  const brandActiveClass = 'bg-[rgba(252,181,0,0.15)] hover:bg-[rgba(252,181,0,0.22)] text-amber-950 border-[rgba(252,181,0,0.35)] shadow-xs font-semibold';
+  const brandActiveClass =
+    'bg-[rgba(252,181,0,0.15)] hover:bg-[rgba(252,181,0,0.22)] text-amber-950 border-[rgba(252,181,0,0.35)] shadow-xs font-semibold';
 
-  const actionGroups = useMemo(() => [
-    {
-      id: 'drawing-tools',
-      items: [
-        {
-          id: 'select',
-          label: 'Select',
-          icon: MousePointer,
-          title: 'Select & Cursor',
-          isTool: true,
-          activeClass: brandActiveClass,
-        },
-        {
-          id: 'text',
-          label: 'Text',
-          icon: Type,
-          title: 'Add Text Overlay',
-          isTool: true,
-          activeClass: brandActiveClass,
-        },
-        {
-          id: 'draw',
-          label: 'Pen',
-          icon: PenTool,
-          title: 'Freehand Pen',
-          isTool: true,
-          activeClass: brandActiveClass,
-        },
-        {
-          id: 'highlight',
-          label: 'Highlight',
-          icon: Highlighter,
-          title: 'Highlighter',
-          isTool: true,
-          activeClass: brandActiveClass,
-        },
-        {
-          id: 'redact',
-          label: 'Redact',
-          icon: Square,
-          title: 'Redact / Blackout Box',
-          isTool: true,
-          activeClass: brandActiveClass,
-        },
-      ],
-    },
-    {
-      id: 'document-actions',
-      items: [
-        {
-          id: 'sign',
-          label: 'Sign',
-          icon: Stamp,
-          title: 'e-Signature Pad',
-          onClick: onOpenSignatureModal,
-          className: 'text-amber-950 bg-[rgba(252,181,0,0.15)] hover:bg-[rgba(252,181,0,0.22)] border-[rgba(252,181,0,0.35)] shadow-xs font-semibold',
-        },
-        {
-          id: 'watermark',
-          label: 'Watermark',
-          icon: Lock,
-          title: 'Watermark Document',
-          onClick: () => onAddWatermark('CONFIDENTIAL'),
-          className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
-          hideOnSmall: true,
-        },
-      ],
-    },
-  ], [onOpenSignatureModal, onAddWatermark]);
+  const actionGroups = useMemo(
+    () => [
+      {
+        id: 'drawing-tools',
+        items: [
+          {
+            id: 'select',
+            label: 'Select',
+            icon: MousePointer,
+            title: 'Select & Cursor',
+            isTool: true,
+            activeClass: brandActiveClass,
+          },
+          {
+            id: 'text',
+            label: 'Text',
+            icon: Type,
+            title: 'Add Text Overlay',
+            isTool: true,
+            activeClass: brandActiveClass,
+          },
+          {
+            id: 'draw',
+            label: 'Pen',
+            icon: PenTool,
+            title: 'Freehand Pen',
+            isTool: true,
+            activeClass: brandActiveClass,
+          },
+          {
+            id: 'highlight',
+            label: 'Highlight',
+            icon: Highlighter,
+            title: 'Highlighter',
+            isTool: true,
+            activeClass: brandActiveClass,
+          },
+          {
+            id: 'redact',
+            label: 'Redact',
+            icon: Square,
+            title: 'Redact / Blackout Box',
+            isTool: true,
+            activeClass: brandActiveClass,
+          },
+        ],
+      },
+      {
+        id: 'document-actions',
+        items: [
+          {
+            id: 'sign',
+            label: 'Sign',
+            icon: Stamp,
+            title: 'e-Signature Pad',
+            onClick: onOpenSignatureModal,
+            className:
+              'text-amber-950 bg-[rgba(252,181,0,0.15)] hover:bg-[rgba(252,181,0,0.22)] border-[rgba(252,181,0,0.35)] shadow-xs font-semibold',
+          },
+          {
+            id: 'watermark',
+            label: 'Watermark',
+            icon: Lock,
+            title: 'Watermark Document',
+            onClick: () => onAddWatermark('CONFIDENTIAL'),
+            className: 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent',
+            hideOnSmall: true,
+          },
+        ],
+      },
+    ],
+    [onOpenSignatureModal, onAddWatermark]
+  );
 
   return (
     <div className="h-11 border-b border-slate-200/80 bg-white/95 backdrop-blur-md px-4 flex items-center justify-between z-10 shrink-0 shadow-xs">

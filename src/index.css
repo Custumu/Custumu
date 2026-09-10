@@ -4,13 +4,13 @@
 
 @layer base {
   * {
-    border-color: #E2E8F0;
+    border-color: #e2e8f0;
   }
-  
+
   body {
-    background-color: #F8FAFC;
-    color: #0F172A;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background-color: #f8fafc;
+    color: #0f172a;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
 
   /* Custom clean light scrollbar */
@@ -19,14 +19,14 @@
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #F8FAFC;
+    background: #f8fafc;
   }
   ::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
+    background: #cbd5e1;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
+    background: #94a3b8;
   }
 }
 
@@ -35,13 +35,13 @@
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid #E2E8F0;
+    border: 1px solid #e2e8f0;
     box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
   }
 
   .glass-card {
-    background: #FFFFFF;
-    border: 1px solid #E2E8F0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
   }
 
@@ -94,4 +94,3 @@
 .textLayer br {
   user-select: none;
 }
-

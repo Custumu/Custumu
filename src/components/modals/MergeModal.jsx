@@ -1,10 +1,16 @@
 ﻿import React, { useRef, useState } from 'react';
 import { X, Plus, FileText, Trash2, ArrowUp, ArrowDown, Merge } from 'lucide-react';
 
-export default function MergeModal({ isOpen, onClose, currentDocBytes, currentDocName, onApplyMerge }) {
+export default function MergeModal({
+  isOpen,
+  onClose,
+  currentDocBytes,
+  currentDocName,
+  onApplyMerge,
+}) {
   const fileInputRef = useRef(null);
   const [fileList, setFileList] = useState([
-    { name: currentDocName || 'Current_Document.pdf', bytes: currentDocBytes, size: '240 KB' }
+    { name: currentDocName || 'Current_Document.pdf', bytes: currentDocBytes, size: '240 KB' },
   ]);
 
   if (!isOpen) return null;
@@ -19,7 +25,7 @@ export default function MergeModal({ isOpen, onClose, currentDocBytes, currentDo
           name: file.name,
           bytes,
           size: `${(file.size / 1024).toFixed(0)} KB`,
-        }
+        },
       ]);
     }
   };
@@ -42,7 +48,7 @@ export default function MergeModal({ isOpen, onClose, currentDocBytes, currentDo
       alert('Please add at least 2 files to merge.');
       return;
     }
-    onApplyMerge(fileList.map(f => f.bytes));
+    onApplyMerge(fileList.map((f) => f.bytes));
     onClose();
   };
 
@@ -139,4 +145,3 @@ export default function MergeModal({ isOpen, onClose, currentDocBytes, currentDo
     </div>
   );
 }
-

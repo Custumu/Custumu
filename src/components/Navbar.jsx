@@ -1,8 +1,26 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { ShieldCheck, Cloud, Download, RotateCcw, RotateCw, FileText,
-  Image, ChevronDown, Check, Sparkles, Info, Merge, Split, Trash2, Copy,
-  ArrowUpDown, FileSpreadsheet, LayoutGrid, Layers } from 'lucide-react';
+import {
+  ShieldCheck,
+  Cloud,
+  Download,
+  RotateCcw,
+  RotateCw,
+  FileText,
+  Image,
+  ChevronDown,
+  Check,
+  Sparkles,
+  Info,
+  Merge,
+  Split,
+  Trash2,
+  Copy,
+  ArrowUpDown,
+  FileSpreadsheet,
+  LayoutGrid,
+  Layers,
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useDocument } from '../context/DocumentContext';
 
@@ -12,31 +30,40 @@ export default function Navbar(props) {
   const navigate = useNavigate();
 
   const isEditor = location.pathname === '/editor';
-  const hasDocument = props.hasDocument !== undefined ? props.hasDocument : (isEditor && Boolean(docCtx.docBuffer));
+  const hasDocument =
+    props.hasDocument !== undefined ? props.hasDocument : isEditor && Boolean(docCtx.docBuffer);
   const documentName = props.documentName ?? docCtx.docName;
   const pageCount = props.pageCount ?? docCtx.docMeta.pageCount;
   const isPrivateMode = props.isPrivateMode ?? docCtx.isPrivateMode;
   const setIsPrivateMode = props.setIsPrivateMode ?? docCtx.setIsPrivateMode;
-  const onResetDocument = props.onResetDocument ?? (isEditor ? docCtx.handleResetDocument : () => navigate('/'));
+  const onResetDocument =
+    props.onResetDocument ?? (isEditor ? docCtx.handleResetDocument : () => navigate('/'));
   const onExportPdf = props.onExportPdf ?? docCtx.handleExportPdf;
   const onExportWord = props.onExportWord ?? docCtx.handleExportWord;
   const onExportExcel = props.onExportExcel ?? docCtx.handleExportExcel;
   const onOpenPngModal = props.onOpenPngModal ?? (() => docCtx.setIsPngModalOpen(true));
   const onOpenMergeModal = props.onOpenMergeModal ?? (() => docCtx.setIsMergeModalOpen(true));
   const onOpenSplitModal = props.onOpenSplitModal ?? (() => docCtx.setIsSplitModalOpen(true));
-  const onDeletePage = props.onDeletePage ?? (() => {
-    if (docCtx.docMeta.pageCount <= 1) {
-      docCtx.showToast('Document must contain at least 1 page.', 'error');
-      return;
-    }
-    if (window.confirm(`Delete current page (Page ${docCtx.activePageIndex + 1})?`)) {
-      docCtx.handleDeletePage(docCtx.activePageIndex);
-    }
-  });
+  const onDeletePage =
+    props.onDeletePage ??
+    (() => {
+      if (docCtx.docMeta.pageCount <= 1) {
+        docCtx.showToast('Document must contain at least 1 page.', 'error');
+        return;
+      }
+      if (window.confirm(`Delete current page (Page ${docCtx.activePageIndex + 1})?`)) {
+        docCtx.handleDeletePage(docCtx.activePageIndex);
+      }
+    });
   const onExtractPages = props.onExtractPages ?? (() => docCtx.setIsSplitModalOpen(true));
-  const onOrganizePages = props.onOrganizePages ?? (() => {
-    docCtx.showToast('Use the left thumbnails panel to reorder, rotate, or duplicate pages', 'info');
-  });
+  const onOrganizePages =
+    props.onOrganizePages ??
+    (() => {
+      docCtx.showToast(
+        'Use the left thumbnails panel to reorder, rotate, or duplicate pages',
+        'info'
+      );
+    });
   const onUndo = props.onUndo ?? docCtx.handleUndo;
   const onRedo = props.onRedo ?? docCtx.handleRedo;
   const canUndo = props.canUndo !== undefined ? props.canUndo : docCtx.canUndo;
@@ -89,7 +116,11 @@ export default function Navbar(props) {
       <header className="h-16 border-b border-slate-200 bg-white/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between z-30 sticky top-0">
         {/* Brand & Document Name */}
         <div className="flex items-center space-x-3 sm:space-x-4">
-          <div className="flex items-center space-x-2.5 cursor-pointer" onClick={onResetDocument} title="Custumu Home">
+          <div
+            className="flex items-center space-x-2.5 cursor-pointer"
+            onClick={onResetDocument}
+            title="Custumu Home"
+          >
             <img src="/logo.svg" alt="Custumu" className="w-8 h-8" />
             <div className="flex flex-col">
               <span className="font-display font-bold text-lg text-slate-900 tracking-tight flex items-center gap-1.5">
@@ -185,14 +216,15 @@ export default function Navbar(props) {
               }`}
             >
               <span>Tools</span>
-              <ChevronDown className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3]' : ''}`} />
+              <ChevronDown
+                className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3]' : ''}`}
+              />
             </button>
 
             {showToolsMenu && (
               <div className="absolute right-0 top-full pt-1 w-[540px] max-w-[95vw] z-50 animate-fade-in">
                 <div className="bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden text-slate-800">
                   <div className="grid grid-cols-2 divide-x divide-slate-100">
-                    
                     {/* Column 1: Native Functionality */}
                     <div className="p-3 space-y-1">
                       <div className="px-3 py-1.5 mb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -202,71 +234,122 @@ export default function Navbar(props) {
 
                       {/* Merge PDF */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); onOpenMergeModal && onOpenMergeModal(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          onOpenMergeModal && onOpenMergeModal();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition shrink-0 mt-0.5">
                           <Merge className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-indigo-600 transition">Merge PDF</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Combine multiple files into one</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-indigo-600 transition">
+                            Merge PDF
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Combine multiple files into one
+                          </div>
                         </div>
                       </button>
 
                       {/* Split PDF */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onOpenSplitModal && onOpenSplitModal(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onOpenSplitModal && onOpenSplitModal();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-cyan-50 text-cyan-600 group-hover:bg-cyan-100 transition shrink-0 mt-0.5">
                           <Split className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-cyan-600 transition">Split PDF</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Separate into individual files</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-cyan-600 transition">
+                            Split PDF
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Separate into individual files
+                          </div>
                         </div>
                       </button>
 
                       {/* Remove pages */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onDeletePage && onDeletePage(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onDeletePage && onDeletePage();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100 transition shrink-0 mt-0.5">
                           <Trash2 className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-rose-600 transition">Remove pages</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Delete unwanted pages</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-rose-600 transition">
+                            Remove pages
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Delete unwanted pages
+                          </div>
                         </div>
                       </button>
 
                       {/* Extract pages */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onExtractPages && onExtractPages(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onExtractPages && onExtractPages();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition shrink-0 mt-0.5">
                           <Copy className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-amber-600 transition">Extract pages</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Save page ranges as new PDF</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-amber-600 transition">
+                            Extract pages
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Save page ranges as new PDF
+                          </div>
                         </div>
                       </button>
 
                       {/* Organize PDF */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onOrganizePages && onOrganizePages(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onOrganizePages && onOrganizePages();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-violet-50 text-violet-600 group-hover:bg-violet-100 transition shrink-0 mt-0.5">
                           <ArrowUpDown className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-violet-600 transition">Organize PDF</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Reorder, rotate & sort pages</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-violet-600 transition">
+                            Organize PDF
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Reorder, rotate & sort pages
+                          </div>
                         </div>
                       </button>
                     </div>
@@ -280,115 +363,162 @@ export default function Navbar(props) {
 
                       {/* PDF to PNG */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onOpenPngModal && onOpenPngModal(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onOpenPngModal && onOpenPngModal();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-cyan-50 text-cyan-600 group-hover:bg-cyan-100 transition shrink-0 mt-0.5">
                           <Image className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-cyan-600 transition">PDF to PNG</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">High-res images (.png)</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-cyan-600 transition">
+                            PDF to PNG
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            High-res images (.png)
+                          </div>
                         </div>
                       </button>
 
                       {/* PDF to Word */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onExportWord && onExportWord(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onExportWord && onExportWord();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition shrink-0 mt-0.5">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition">PDF to Word</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Editable Word document (.doc)</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-blue-600 transition">
+                            PDF to Word
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Editable Word document (.doc)
+                          </div>
                         </div>
                       </button>
 
                       {/* PDF to Excel */}
                       <button
-                        onClick={() => { setShowToolsMenu(false); if (!hasDocument) { alert('Please open or upload a PDF document first.'); return; } onExportExcel && onExportExcel(); }}
+                        onClick={() => {
+                          setShowToolsMenu(false);
+                          if (!hasDocument) {
+                            alert('Please open or upload a PDF document first.');
+                            return;
+                          }
+                          onExportExcel && onExportExcel();
+                        }}
                         className="w-full text-left px-3 py-2 rounded-xl hover:bg-white hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
                       >
                         <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition shrink-0 mt-0.5">
                           <FileSpreadsheet className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-emerald-600 transition">PDF to Excel</div>
-                          <div className="text-[11px] text-slate-500 leading-tight">Extract tables to spreadsheet (.xlsx)</div>
+                          <div className="font-semibold text-xs text-slate-900 group-hover:text-emerald-600 transition">
+                            PDF to Excel
+                          </div>
+                          <div className="text-[11px] text-slate-500 leading-tight">
+                            Extract tables to spreadsheet (.xlsx)
+                          </div>
                         </div>
                       </button>
                     </div>
-
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-            {/* Export Dropdown - visible when a document is in use */}
-            {hasDocument && (
-              <div className="relative" ref={exportMenuRef}>
-                <button
-                  onClick={() => {
-                    setShowExportMenu(!showExportMenu);
-                    setShowToolsMenu(false);
-                  }}
-                  className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#184cc8] transition cursor-pointer shadow-sm"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Export</span>
-                  <ChevronDown className={`w-3.5 h-3.5 ml-0.5 opacity-80 transition-transform ${showExportMenu ? 'rotate-180' : ''}`} />
-                </button>
+          {/* Export Dropdown - visible when a document is in use */}
+          {hasDocument && (
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                onClick={() => {
+                  setShowExportMenu(!showExportMenu);
+                  setShowToolsMenu(false);
+                }}
+                className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#184cc8] transition cursor-pointer shadow-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 ml-0.5 opacity-80 transition-transform ${showExportMenu ? 'rotate-180' : ''}`}
+                />
+              </button>
 
-                {showExportMenu && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-fade-in">
-                    <button
-                      onClick={handleDownloadPdf}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition cursor-pointer"
-                    >
-                      <FileText className="w-4 h-4 text-rose-500 shrink-0" />
-                      <div>
-                        <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
-                        <div className="text-[11px] text-slate-500">Includes all annotations & edits</div>
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs animate-fade-in">
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-rose-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
+                      <div className="text-[11px] text-slate-500">
+                        Includes all annotations & edits
                       </div>
-                    </button>
-                    <button
-                      onClick={() => { setShowExportMenu(false); onOpenPngModal && onOpenPngModal(); }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
-                    >
-                      <Image className="w-4 h-4 text-cyan-600 shrink-0" />
-                      <div>
-                        <div className="font-bold text-slate-900">Export as PNG (.png)</div>
-                        <div className="text-[11px] text-slate-500">Current page or all pages (High-Res)</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      onOpenPngModal && onOpenPngModal();
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                  >
+                    <Image className="w-4 h-4 text-cyan-600 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export as PNG (.png)</div>
+                      <div className="text-[11px] text-slate-500">
+                        Current page or all pages (High-Res)
                       </div>
-                    </button>
-                    <button
-                      onClick={() => { setShowExportMenu(false); onExportWord && onExportWord(); }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
-                    >
-                      <FileText className="w-4 h-4 text-blue-500 shrink-0" />
-                      <div>
-                        <div className="font-bold text-slate-900">Export as Word (.doc)</div>
-                        <div className="text-[11px] text-slate-500">Editable text & headings</div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => { setShowExportMenu(false); onExportExcel && onExportExcel(); }}
-                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
-                    >
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
-                      <div>
-                        <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
-                        <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
-                      </div>
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      onExportWord && onExportWord();
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                  >
+                    <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export as Word (.doc)</div>
+                      <div className="text-[11px] text-slate-500">Editable text & headings</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportMenu(false);
+                      onExportExcel && onExportExcel();
+                    }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100 cursor-pointer"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
+                      <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
       {/* Privacy Guarantee Modal */}
@@ -400,7 +530,9 @@ export default function Navbar(props) {
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-slate-900">Custumu Dual Privacy Engine</h3>
+                <h3 className="text-base font-semibold text-slate-900">
+                  Custumu Dual Privacy Engine
+                </h3>
                 <p className="text-xs text-slate-600">custumu.com enterprise guarantee</p>
               </div>
             </div>
@@ -411,7 +543,8 @@ export default function Navbar(props) {
                   <Check className="w-3.5 h-3.5" /> Private Mode (Default)
                 </div>
                 <p className="text-slate-600">
-                  Runs 100% inside your browser's WebAssembly engine. Your documents never leave your computer or touch any server.
+                  Runs 100% inside your browser's WebAssembly engine. Your documents never leave
+                  your computer or touch any server.
                 </p>
               </div>
 
@@ -420,7 +553,9 @@ export default function Navbar(props) {
                   <Cloud className="w-3.5 h-3.5" /> Cloud Enclave Mode
                 </div>
                 <p className="text-slate-600">
-                  Used for high-capacity multi-page OCR and deep AI transformations. Files are end-to-end encrypted (TLS 1.3) and permanently purged immediately after generation.
+                  Used for high-capacity multi-page OCR and deep AI transformations. Files are
+                  end-to-end encrypted (TLS 1.3) and permanently purged immediately after
+                  generation.
                 </p>
               </div>
             </div>
@@ -437,7 +572,3 @@ export default function Navbar(props) {
     </>
   );
 }
-
-
-
-

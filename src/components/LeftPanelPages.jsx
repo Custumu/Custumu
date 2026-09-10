@@ -11,7 +11,7 @@ export default function LeftPanelPages({
   onDuplicatePage,
   onMovePage,
   onAddPage,
-  onOpenSplitModal
+  onOpenSplitModal,
 }) {
   const [contextMenu, setContextMenu] = useState(null); // { x: number, y: number, pageIndex: number }
 
@@ -31,7 +31,9 @@ export default function LeftPanelPages({
       <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Layers className="w-4 h-4 text-brand-500" />
-          <span className="font-semibold text-xs text-slate-800 uppercase tracking-wider">Pages</span>
+          <span className="font-semibold text-xs text-slate-800 uppercase tracking-wider">
+            Pages
+          </span>
           <span className="px-1.5 py-0.5 rounded bg-slate-100 text-[10px] font-medium text-slate-600 border border-slate-200">
             {pages.length}
           </span>
@@ -181,5 +183,3 @@ export default function LeftPanelPages({
     </aside>
   );
 }
-
-

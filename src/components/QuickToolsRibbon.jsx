@@ -1,5 +1,13 @@
 import React from 'react';
-import { Merge, Split, Minimize2, ScanText, FileText, FileSpreadsheet, Sparkles } from 'lucide-react';
+import {
+  Merge,
+  Split,
+  Minimize2,
+  ScanText,
+  FileText,
+  FileSpreadsheet,
+  Sparkles,
+} from 'lucide-react';
 import { useDocument } from '../context/DocumentContext';
 
 export default function QuickToolsRibbon() {

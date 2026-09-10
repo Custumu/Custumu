@@ -64,14 +64,14 @@ export default function CanvasToolbar({
             isTool: true,
             activeClass: brandActiveClass,
           },
-          {
-            id: 'redact',
-            label: 'Redact',
-            icon: Square,
-            title: 'Redact / Blackout Box',
-            isTool: true,
-            activeClass: brandActiveClass,
-          },
+          // {
+          //   id: 'redact',
+          //   label: 'Redact',
+          //   icon: Square,
+          //   title: 'Redact / Blackout Box',
+          //   isTool: true,
+          //   activeClass: brandActiveClass,
+          // },
         ],
       },
       {

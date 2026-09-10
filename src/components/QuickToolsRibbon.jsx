@@ -11,6 +11,7 @@ import {
   RotateCw,
 } from 'lucide-react';
 import { useDocument } from '../context/DocumentContext';
+import PdfIcon from './PdfIcon';
 
 export default function QuickToolsRibbon() {
   const {
@@ -33,8 +34,8 @@ export default function QuickToolsRibbon() {
       <div className="flex items-center space-x-1.5 sm:space-x-2 overflow-hidden">
         {/* PDF File Name */}
         {docName && (
-          <div className="flex items-center space-x-1.5 text-xs text-slate-700 dark:text-slate-300 px-2.5 py-0.5shrink-0">
-            <FileText className="w-3.5 h-3.5 text-brand-400 shrink-0" />
+          <div className="flex items-center space-x-1.5 text-xs text-slate-700 dark:text-slate-300 px-2.5 py-0.5 shrink-0">
+            <PdfIcon className="w-3.5 h-3.5 shrink-0" />
             <span className="font-medium truncate max-w-[130px] sm:max-w-[200px]" title={docName}>
               {docName}
             </span>

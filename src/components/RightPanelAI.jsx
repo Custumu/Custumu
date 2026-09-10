@@ -1,13 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { 
   Sparkles, 
-  Send, 
   Bot, 
   User, 
   FileSpreadsheet, 
   Trash2, 
   Minimize2, 
-  FileText, 
   ExternalLink,
   Stamp,
   RotateCw,
@@ -17,9 +15,6 @@ import {
   CheckCircle2,
   Zap,
   Download,
-  Layers,
-  Database,
-  SquareDashedMousePointer,
   ArrowUp
 } from 'lucide-react';
 import { streamEnterpriseAiResponse, getAiConfig, fetchSuggestedPrompts } from '../services/enterpriseAi';
@@ -492,25 +487,7 @@ export default function RightPanelAI({
 
           <div className="flex items-center justify-between pt-2 mt-1">
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                title="Ground in document data"
-                className="p-1 text-slate-400 hover:text-slate-600 rounded transition cursor-pointer"
-              >
-                <Database className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setInput((prev) => (prev.startsWith('/edit') ? prev : `/edit ${prev}`.trimStart()));
-                  textareaRef.current?.focus();
-                }}
-                title="Edit document"
-                className="flex items-center gap-1.5 px-1.5 py-0.5 rounded text-xs font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
-              >
-                <SquareDashedMousePointer className="w-3.5 h-3.5" />
-                <span>Edit</span>
-              </button>
+ 
             </div>
 
             <button

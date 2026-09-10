@@ -64,17 +64,16 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
       <div className="bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-2xl max-w-lg w-full p-6 shadow-2xl text-slate-800 dark:text-slate-100">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-              <Stamp className="w-5 h-5" />
-            </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Create E-Signature</h3>
-              <p className="text-xs text-slate-600 dark:text-slate-400">
-                Draw your signature with your mouse or stylus
-              </p>
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                Create E-Signature
+              </h3>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -83,24 +82,21 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
         <div className="border border-slate-700 rounded-xl bg-white overflow-hidden relative mb-4">
           <canvas
             ref={canvasRef}
-            width={460}
-            height={180}
+            width={470}
+            height={200}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             className="w-full h-44 cursor-crosshair"
           />
-          <div className="absolute bottom-2 left-4 text-[10px] text-slate-600 select-none">
-            Custumu Verified E-Signature
-          </div>
         </div>
 
         {/* Buttons */}
         <div className="flex items-center justify-between">
           <button
             onClick={handleClear}
-            className="flex items-center space-x-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 transition"
+            className="flex items-center space-x-1.5 px-3 py-2.5 rounded-lg bg-white hover:bg-slate-100 border border-slate-200 text-xs text-slate-700 transition"
           >
             <Eraser className="w-3.5 h-3.5" />
             <span>Clear</span>
@@ -109,14 +105,14 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
           <div className="flex items-center space-x-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-xs text-slate-600 hover:text-slate-900 transition"
+              className="px-4 py-2.5 rounded-lg text-xs text-slate-600 hover:text-slate-900 transition"
             >
               Cancel
             </button>
             <button
               onClick={handleAdopt}
               disabled={!hasDrawn}
-              className="flex items-center space-x-1.5 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white text-xs font-semibold shadow-md transition"
+              className="flex items-center space-x-1.5 px-4 py-2.5 rounded-lg bg-brand hover:bg-brand/80 disabled:opacity-40 text-white text-xs font-semibold transition"
             >
               <Check className="w-4 h-4" />
               <span>Stamp Signature</span>

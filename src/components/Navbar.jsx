@@ -4,6 +4,7 @@ import { ShieldCheck, Cloud, Download, RotateCcw, RotateCw, FileText,
 import confetti from 'canvas-confetti';
 
 export default function Navbar({
+  hasDocument = false,
   documentName,
   pageCount,
   isPrivateMode,
@@ -41,128 +42,133 @@ export default function Navbar({
             </div>
           </div>
 
+          {/* Active File Pill - only visible when a document is loaded */}
+          {hasDocument && documentName && (
+            <div className="hidden md:flex items-center space-x-2 text-xs text-slate-700 bg-slate-100/80 px-2.5 py-1 rounded-full border border-slate-200/60">
+              <FileText className="w-3.5 h-3.5 text-brand-400" />
+              <span className="font-medium truncate max-w-[200px]">{documentName}</span>
+            </div>
+          )}
+        </div>
 
-          {/* Active File Pill */}
-          <div className="hidden md:flex items-center space-x-2 text-xs text-slate-700">
-            <FileText className="w-3.5 h-3.5 text-brand-400" />
-            <span className="font-medium truncate max-w-[200px]">{documentName || 'Document.pdf'}</span>
+        {/* Center: Undo / Redo - only visible when a document is in use */}
+        {hasDocument && (
+          <div className="hidden lg:flex items-center space-x-1 bg-white/60 p-1 rounded-lg border border-slate-200">
+            <button
+              onClick={onUndo}
+              disabled={!canUndo}
+              className={`p-1.5 rounded transition ${canUndo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}
+              title="Undo (Ctrl+Z)"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onRedo}
+              disabled={!canRedo}
+              className={`p-1.5 rounded transition ${canRedo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-400 cursor-not-allowed'}`}
+              title="Redo (Ctrl+Y)"
+            >
+              <RotateCw className="w-4 h-4" />
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* Center: Undo / Redo */}
-        <div className="hidden lg:flex items-center space-x-1 bg-white/60 p-1 rounded-lg border border-slate-200">
-          <button
-            onClick={onUndo}
-            disabled={!canUndo}
-            className={`p-1.5 rounded transition ${canUndo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-600 cursor-not-allowed'}`}
-            title="Undo (Ctrl+Z)"
-          >
-            <RotateCcw className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onRedo}
-            disabled={!canRedo}
-            className={`p-1.5 rounded transition ${canRedo ? 'text-slate-700 hover:text-slate-900 hover:bg-slate-100' : 'text-slate-600 cursor-not-allowed'}`}
-            title="Redo (Ctrl+Y)"
-          >
-            <RotateCw className="w-4 h-4" />
-          </button>
-        </div>
+        {/* Right: Export Menu - only visible when a document is in use */}
+        {hasDocument && (
+          <div className="flex items-center space-x-3">
+            {/* Privacy Switcher Badge */}
+            {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
+              <button
+                onClick={() => setIsPrivateMode(true)}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
+                  isPrivateMode
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-700'
+                }`}
+                title="Private Mode: Zero uploads, 100% in-browser WebAssembly"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Private WASM</span>
+              </button>
+              <button
+                onClick={() => setIsPrivateMode(false)}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
+                  !isPrivateMode
+                    ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-700'
+                }`}
+                title="Cloud Mode: High-capacity AI & heavy worker conversions"
+              >
+                <Cloud className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Cloud Enclave</span>
+              </button>
+              <button
+                onClick={() => setShowPrivacyModal(true)}
+                className="p-1 text-slate-500 hover:text-slate-700 transition"
+                title="Privacy Information"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
+            </div> */}
 
-        {/* Right: Privacy Toggle & Export */}
-        <div className="flex items-center space-x-3">
-          {/* Privacy Switcher Badge */}
-          {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
-            <button
-              onClick={() => setIsPrivateMode(true)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
-                isPrivateMode
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-700'
-              }`}
-              title="Private Mode: Zero uploads, 100% in-browser WebAssembly"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Private WASM</span>
-            </button>
-            <button
-              onClick={() => setIsPrivateMode(false)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
-                !isPrivateMode
-                  ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-700'
-              }`}
-              title="Cloud Mode: High-capacity AI & heavy worker conversions"
-            >
-              <Cloud className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cloud Enclave</span>
-            </button>
-            <button
-              onClick={() => setShowPrivacyModal(true)}
-              className="p-1 text-slate-500 hover:text-slate-700 transition"
-              title="Privacy Information"
-            >
-              <Info className="w-3.5 h-3.5" />
-            </button>
-          </div> */}
+            {/* Export Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#184cc8] transition"
+              >
+                <Download className="w-4 h-4" />
+                <span>Export</span>
+                <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-80" />
+              </button>
 
-          {/* Export Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setShowExportMenu(!showExportMenu)}
-              className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg"
-            >
-              <Download className="w-4 h-4" />
-              <span>Export</span>
-              <ChevronDown className="w-3.5 h-3.5 ml-0.5 opacity-80" />
-            </button>
-
-            {showExportMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
-                <button
-                  onClick={handleDownloadPdf}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition"
-                >
-                  <FileText className="w-4 h-4 text-rose-500 shrink-0" />
-                  <div>
-                    <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
-                    <div className="text-[11px] text-slate-500">Includes all annotations & edits</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => { setShowExportMenu(false); onOpenPngModal && onOpenPngModal(); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
-                >
-                  <Image className="w-4 h-4 text-cyan-600 shrink-0" />
-                  <div>
-                    <div className="font-bold text-slate-900">Export as PNG (.png)</div>
-                    <div className="text-[11px] text-slate-500">Current page or all pages (High-Res)</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => { setShowExportMenu(false); onExportWord(); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
-                >
-                  <FileText className="w-4 h-4 text-blue-500 shrink-0" />
-                  <div>
-                    <div className="font-bold text-slate-900">Export as Word (.doc)</div>
-                    <div className="text-[11px] text-slate-500">Editable text & headings</div>
-                  </div>
-                </button>
-                <button
-                  onClick={() => { setShowExportMenu(false); onExportExcel(); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
-                >
-                  <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <div>
-                    <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
-                    <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
-                  </div>
-                </button>
-              </div>
-            )}
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50 text-xs">
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition"
+                  >
+                    <FileText className="w-4 h-4 text-rose-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export as PDF (.pdf)</div>
+                      <div className="text-[11px] text-slate-500">Includes all annotations & edits</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { setShowExportMenu(false); onOpenPngModal && onOpenPngModal(); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
+                  >
+                    <Image className="w-4 h-4 text-cyan-600 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export as PNG (.png)</div>
+                      <div className="text-[11px] text-slate-500">Current page or all pages (High-Res)</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { setShowExportMenu(false); onExportWord(); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
+                  >
+                    <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export as Word (.doc)</div>
+                      <div className="text-[11px] text-slate-500">Editable text & headings</div>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => { setShowExportMenu(false); onExportExcel(); }}
+                    className="w-full text-left px-4 py-2.5 hover:bg-slate-50 flex items-center space-x-2 text-slate-800 transition border-t border-slate-100"
+                  >
+                    <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-900">Export Tables to Excel (.xlsx)</div>
+                      <div className="text-[11px] text-slate-500">Spreadsheet table parser</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
       {/* Privacy Guarantee Modal */}

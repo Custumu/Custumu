@@ -546,6 +546,7 @@ export default function App() {
 
       {/* Navigation */}
       <Navbar
+        hasDocument={Boolean(docBuffer)}
         documentName={docName}
         pageCount={docMeta.pageCount}
         isPrivateMode={isPrivateMode}

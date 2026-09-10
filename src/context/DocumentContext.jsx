@@ -279,9 +279,11 @@ export function DocumentProvider({ children }) {
 
   const handleAdoptSignature = useCallback(
     (signatureDataUrl) => {
+      const sigId = `sig-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
       setAnnotations((prev) => [
         ...prev,
         {
+          id: sigId,
           pageIndex: activePageIndex,
           type: 'signature',
           dataUrl: signatureDataUrl,
@@ -291,7 +293,7 @@ export function DocumentProvider({ children }) {
           height: 60,
         },
       ]);
-      showToast('Signature placed on active page');
+      showToast('Signature placed - drag to move or resize');
     },
     [activePageIndex, showToast]
   );

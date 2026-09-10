@@ -347,6 +347,18 @@ export async function convertPdfPageToPng(docBuffer, pageIndex = 0, scale = 2.0,
           ctx.fillStyle = '#1e293b';
           ctx.font = `bold ${Math.round(14 * ratio)}px Inter, sans-serif`;
           ctx.fillText(anno.text, anno.x * ratio, anno.y * ratio);
+        } else if (anno.type === 'signature' && anno.dataUrl) {
+          const img = new Image();
+          img.src = anno.dataUrl;
+          if (img.complete) {
+            ctx.drawImage(
+              img,
+              anno.x * ratio,
+              anno.y * ratio,
+              anno.width * ratio,
+              anno.height * ratio
+            );
+          }
         }
       });
     }

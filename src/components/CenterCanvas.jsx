@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useMemo } from 'react';
-import { Loader2, Trash2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { loadPdfDoc, renderPdfPage, renderPdfTextLayer } from '../services/pdfRenderer';
 import CanvasToolbar from './CanvasToolbar';
+import SignatureOverlay from './SignatureOverlay';
 
 export default function CenterCanvas({
   docBuffer,
@@ -34,234 +35,6 @@ export default function CenterCanvas({
     dpr: 1,
   });
   const [canvasRenderSuccess, setCanvasRenderSuccess] = useState(false);
-
-  // Interactive Signature State: selection and drag/resize tracking
-  const [selectedSignatureId, setSelectedSignatureId] = useState(null);
-  const [interactionState, setInteractionState] = useState(null);
-
-  // Memoized signatures for the current active page
-  const pageSignatures = useMemo(() => {
-    return annotations
-      .filter((a) => a.type === 'signature' && a.pageIndex === activePageIndex)
-      .map((a, idx) => ({
-        ...a,
-        id: a.id || `sig-${a.pageIndex}-${idx}`,
-      }));
-  }, [annotations, activePageIndex]);
-
-  // Automatically select newly stamped signatures during render without cascading effect renders
-  const [prevSigCount, setPrevSigCount] = useState(pageSignatures.length);
-  if (pageSignatures.length !== prevSigCount) {
-    setPrevSigCount(pageSignatures.length);
-    if (pageSignatures.length > prevSigCount) {
-      setSelectedSignatureId(pageSignatures[pageSignatures.length - 1]?.id || null);
-    }
-  }
-
-  // Window pointer listeners for moving and resizing signatures smoothly
-  useEffect(() => {
-    if (!interactionState) return;
-
-    const handleMove = (e) => {
-      const { type, handle, id, startPointer, startAnno, aspectRatio } = interactionState;
-      const baseWidth = canvasDimensions.baseWidth || 612;
-      const baseHeight = canvasDimensions.baseHeight || 792;
-      const displayWidth = canvasDimensions.width || 612;
-      const displayHeight = canvasDimensions.height || 792;
-
-      const scaleX = baseWidth / displayWidth;
-      const scaleY = baseHeight / displayHeight;
-
-      const deltaX = (e.clientX - startPointer.x) * scaleX;
-      const deltaY = (e.clientY - startPointer.y) * scaleY;
-
-      if (type === 'move') {
-        let newX = Math.round(startAnno.x + deltaX);
-        let newY = Math.round(startAnno.y + deltaY);
-
-        newX = Math.max(0, Math.min(newX, baseWidth - startAnno.width));
-        newY = Math.max(0, Math.min(newY, baseHeight - startAnno.height));
-
-        setAnnotations((prev) =>
-          prev.map((a, idx) => {
-            const annoId = a.id || `sig-${a.pageIndex}-${idx}`;
-            return annoId === id ? { ...a, id: annoId, x: newX, y: newY } : a;
-          })
-        );
-      } else if (type === 'resize') {
-        const MIN_WIDTH = 45;
-        const MIN_HEIGHT = 18;
-
-        let newWidth = startAnno.width;
-        let newHeight = startAnno.height;
-        let newX = startAnno.x;
-        let newY = startAnno.y;
-
-        if (handle === 'se') {
-          const delta = (deltaX + deltaY * aspectRatio) / 2;
-          newWidth = Math.max(MIN_WIDTH, startAnno.width + delta);
-          newHeight = Math.max(MIN_HEIGHT, Math.round(newWidth / aspectRatio));
-          if (newX + newWidth > baseWidth) {
-            newWidth = baseWidth - newX;
-            newHeight = Math.round(newWidth / aspectRatio);
-          }
-          if (newY + newHeight > baseHeight) {
-            newHeight = baseHeight - newY;
-            newWidth = Math.round(newHeight * aspectRatio);
-          }
-        } else if (handle === 'sw') {
-          const delta = (-deltaX + deltaY * aspectRatio) / 2;
-          newWidth = Math.max(MIN_WIDTH, startAnno.width + delta);
-          newHeight = Math.max(MIN_HEIGHT, Math.round(newWidth / aspectRatio));
-          newX = startAnno.x + (startAnno.width - newWidth);
-          if (newX < 0) {
-            newX = 0;
-            newWidth = startAnno.x + startAnno.width;
-            newHeight = Math.round(newWidth / aspectRatio);
-          }
-          if (newY + newHeight > baseHeight) {
-            newHeight = baseHeight - newY;
-            newWidth = Math.round(newHeight * aspectRatio);
-            newX = startAnno.x + (startAnno.width - newWidth);
-          }
-        } else if (handle === 'ne') {
-          const delta = (deltaX - deltaY * aspectRatio) / 2;
-          newWidth = Math.max(MIN_WIDTH, startAnno.width + delta);
-          newHeight = Math.max(MIN_HEIGHT, Math.round(newWidth / aspectRatio));
-          newY = startAnno.y + (startAnno.height - newHeight);
-          if (newX + newWidth > baseWidth) {
-            newWidth = baseWidth - newX;
-            newHeight = Math.round(newWidth / aspectRatio);
-            newY = startAnno.y + (startAnno.height - newHeight);
-          }
-          if (newY < 0) {
-            newY = 0;
-            newHeight = startAnno.y + startAnno.height;
-            newWidth = Math.round(newHeight * aspectRatio);
-          }
-        } else if (handle === 'nw') {
-          const delta = (-deltaX - deltaY * aspectRatio) / 2;
-          newWidth = Math.max(MIN_WIDTH, startAnno.width + delta);
-          newHeight = Math.max(MIN_HEIGHT, Math.round(newWidth / aspectRatio));
-          newX = startAnno.x + (startAnno.width - newWidth);
-          newY = startAnno.y + (startAnno.height - newHeight);
-          if (newX < 0) {
-            newX = 0;
-            newWidth = startAnno.x + startAnno.width;
-            newHeight = Math.round(newWidth / aspectRatio);
-            newY = startAnno.y + (startAnno.height - newHeight);
-          }
-          if (newY < 0) {
-            newY = 0;
-            newHeight = startAnno.y + startAnno.height;
-            newWidth = Math.round(newHeight * aspectRatio);
-            newX = startAnno.x + (startAnno.width - newWidth);
-          }
-        }
-
-        setAnnotations((prev) =>
-          prev.map((a, idx) => {
-            const annoId = a.id || `sig-${a.pageIndex}-${idx}`;
-            return annoId === id
-              ? {
-                  ...a,
-                  id: annoId,
-                  x: Math.round(newX),
-                  y: Math.round(newY),
-                  width: Math.round(newWidth),
-                  height: Math.round(newHeight),
-                }
-              : a;
-          })
-        );
-      }
-    };
-
-    const handleUp = () => {
-      setInteractionState(null);
-    };
-
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    window.addEventListener('pointercancel', handleUp);
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('mouseup', handleUp);
-    return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-      window.removeEventListener('pointercancel', handleUp);
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('mouseup', handleUp);
-    };
-  }, [interactionState, canvasDimensions, setAnnotations]);
-
-  // Keyboard shortcut: Delete or Backspace removes selected signature, Escape deselects
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && selectedSignatureId) {
-        setSelectedSignatureId(null);
-        return;
-      }
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedSignatureId) {
-        if (
-          document.activeElement?.tagName === 'INPUT' ||
-          document.activeElement?.tagName === 'TEXTAREA'
-        ) {
-          return;
-        }
-        setAnnotations((prev) =>
-          prev.filter((a, idx) => (a.id || `sig-${a.pageIndex}-${idx}`) !== selectedSignatureId)
-        );
-        setSelectedSignatureId(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedSignatureId, setAnnotations]);
-
-  // Click anywhere outside the signature overlay to deselect
-  useEffect(() => {
-    if (!selectedSignatureId) return;
-
-    const handleGlobalPointerDown = (e) => {
-      if (e.target.closest && e.target.closest('[data-signature-overlay]')) {
-        return;
-      }
-      setSelectedSignatureId(null);
-    };
-
-    window.addEventListener('pointerdown', handleGlobalPointerDown);
-    return () => {
-      window.removeEventListener('pointerdown', handleGlobalPointerDown);
-    };
-  }, [selectedSignatureId]);
-
-  const handleStartMove = (e, anno) => {
-    e.stopPropagation();
-    if (e.cancelable) e.preventDefault();
-    setSelectedSignatureId(anno.id);
-    setInteractionState({
-      type: 'move',
-      id: anno.id,
-      startPointer: { x: e.clientX, y: e.clientY },
-      startAnno: { x: anno.x, y: anno.y, width: anno.width, height: anno.height },
-      aspectRatio: anno.width / (anno.height || 1),
-    });
-  };
-
-  const handleStartResize = (e, anno, handle) => {
-    e.stopPropagation();
-    if (e.cancelable) e.preventDefault();
-    setSelectedSignatureId(anno.id);
-    setInteractionState({
-      type: 'resize',
-      handle,
-      id: anno.id,
-      startPointer: { x: e.clientX, y: e.clientY },
-      startAnno: { x: anno.x, y: anno.y, width: anno.width, height: anno.height },
-      aspectRatio: anno.width / (anno.height || 1),
-    });
-  };
 
   // Create real Blob URL for uploaded PDF
   const blobUrl = useMemo(() => {
@@ -472,7 +245,6 @@ export default function CenterCanvas({
   }, [activePageIndex, annotations, canvasDimensions]);
 
   const handleMouseDown = (e) => {
-    setSelectedSignatureId(null);
     const canvas = annotationCanvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
@@ -624,26 +396,13 @@ export default function CenterCanvas({
       />
 
       {/* Main Real PDF Canvas Viewport */}
-      <div
-        ref={viewportRef}
-        className="flex-1 overflow-auto p-6 md:p-8 flex flex-col items-center"
-        onPointerDown={(e) => {
-          if (!e.target.closest || !e.target.closest('[data-signature-overlay]')) {
-            setSelectedSignatureId(null);
-          }
-        }}
-      >
+      <div ref={viewportRef} className="flex-1 overflow-auto p-6 md:p-8 flex flex-col items-center">
         <div className="my-auto py-2 flex flex-col items-center">
           <div
             className="relative bg-white shadow-2xl rounded-sm select-none"
             style={{
               width: `${canvasDimensions.width}px`,
               height: `${canvasDimensions.height}px`,
-            }}
-            onPointerDown={(e) => {
-              if (!e.target.closest || !e.target.closest('[data-signature-overlay]')) {
-                setSelectedSignatureId(null);
-              }
             }}
           >
             {/* Loading indicator */}
@@ -696,103 +455,12 @@ export default function CenterCanvas({
             />
 
             {/* 4. Interactive Movable & Resizable Signatures Layer */}
-            {pageSignatures.map((anno) => {
-              const isSelected = selectedSignatureId === anno.id;
-              const baseWidth = canvasDimensions.baseWidth || 612;
-              const baseHeight = canvasDimensions.baseHeight || 792;
-              const displayWidth = canvasDimensions.width || 612;
-              const displayHeight = canvasDimensions.height || 792;
-
-              const leftPx = (anno.x / baseWidth) * displayWidth;
-              const topPx = (anno.y / baseHeight) * displayHeight;
-              const widthPx = (anno.width / baseWidth) * displayWidth;
-              const heightPx = (anno.height / baseHeight) * displayHeight;
-
-              return (
-                <div
-                  key={anno.id}
-                  data-signature-overlay="true"
-                  onPointerDown={(e) => handleStartMove(e, anno)}
-                  onMouseDown={(e) => handleStartMove(e, anno)}
-                  className={`absolute select-none touch-none cursor-move ${
-                    isSelected
-                      ? 'ring-2 ring-brand-500 ring-dashed'
-                      : 'hover:ring-1.5 hover:ring-brand-500/60 hover:ring-dashed hover:bg-brand-500/5'
-                  }`}
-                  style={{
-                    left: `${leftPx}px`,
-                    top: `${topPx}px`,
-                    width: `${widthPx}px`,
-                    height: `${heightPx}px`,
-                    zIndex: isSelected ? 25 : 20,
-                    pointerEvents: 'auto',
-                  }}
-                >
-                  <img
-                    src={anno.dataUrl}
-                    alt="Stamped Signature"
-                    draggable={false}
-                    className="w-full h-full object-contain pointer-events-none select-none"
-                  />
-
-                  {/* Handles and delete button when selected */}
-                  {isSelected && (
-                    <>
-                      {/* Delete button at top right */}
-                      <button
-                        type="button"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAnnotations((prev) =>
-                            prev.filter(
-                              (a, idx) => (a.id || `sig-${a.pageIndex}-${idx}`) !== anno.id
-                            )
-                          );
-                          setSelectedSignatureId(null);
-                        }}
-                        title="Delete signature (or press Delete)"
-                        className="absolute -top-3.5 -right-3.5 w-6 h-6 rounded-full bg-white dark:bg-slate-800 text-rose-500 hover:text-white hover:bg-rose-500 border border-slate-200 dark:border-slate-700 shadow-md flex items-center justify-center cursor-pointer transition-colors"
-                        style={{ zIndex: 30 }}
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* 4 Corner Resize Handles */}
-                      <div
-                        onPointerDown={(e) => handleStartResize(e, anno, 'nw')}
-                        onMouseDown={(e) => handleStartResize(e, anno, 'nw')}
-                        title="Resize signature"
-                        className="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
-                        style={{ zIndex: 30 }}
-                      />
-                      <div
-                        onPointerDown={(e) => handleStartResize(e, anno, 'ne')}
-                        onMouseDown={(e) => handleStartResize(e, anno, 'ne')}
-                        title="Resize signature"
-                        className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
-                        style={{ zIndex: 30 }}
-                      />
-                      <div
-                        onPointerDown={(e) => handleStartResize(e, anno, 'se')}
-                        onMouseDown={(e) => handleStartResize(e, anno, 'se')}
-                        title="Resize signature"
-                        className="absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nwse-resize hover:scale-125 transition-transform"
-                        style={{ zIndex: 30 }}
-                      />
-                      <div
-                        onPointerDown={(e) => handleStartResize(e, anno, 'sw')}
-                        onMouseDown={(e) => handleStartResize(e, anno, 'sw')}
-                        title="Resize signature"
-                        className="absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white border-2 border-brand-500 rounded-full shadow-xs cursor-nesw-resize hover:scale-125 transition-transform"
-                        style={{ zIndex: 30 }}
-                      />
-                    </>
-                  )}
-                </div>
-              );
-            })}
+            <SignatureOverlay
+              annotations={annotations}
+              setAnnotations={setAnnotations}
+              activePageIndex={activePageIndex}
+              canvasDimensions={canvasDimensions}
+            />
 
             {/* Text Input Popover */}
             {textInputPos && (

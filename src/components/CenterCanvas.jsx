@@ -716,7 +716,7 @@ export default function CenterCanvas({
                   onMouseDown={(e) => handleStartMove(e, anno)}
                   className={`absolute select-none touch-none cursor-move ${
                     isSelected
-                      ? 'ring-2 ring-brand-500 ring-dashed bg-brand-500/10'
+                      ? 'ring-2 ring-brand-500 ring-dashed'
                       : 'hover:ring-1.5 hover:ring-brand-500/60 hover:ring-dashed hover:bg-brand-500/5'
                   }`}
                   style={{

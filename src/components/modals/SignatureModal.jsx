@@ -2,16 +2,16 @@ import React, { useRef, useState, useEffect } from 'react';
 import { X, Eraser, Check } from 'lucide-react';
 
 const SIGNATURE_COLORS = [
+  { id: 'black', value: '#000000', label: 'Black' },
   { id: 'blue', value: '#0284C7', label: 'Blue' },
   { id: 'red', value: '#DC2626', label: 'Red' },
-  { id: 'black', value: '#000000', label: 'Black' },
 ];
 
 export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
   const canvasRef = useRef(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
-  const [selectedColor, setSelectedColor] = useState('#0284C7');
+  const [selectedColor, setSelectedColor] = useState('#000000');
 
   useEffect(() => {
     if (isOpen && canvasRef.current) {
@@ -28,7 +28,7 @@ export default function SignatureModal({ isOpen, onClose, onAdoptSignature }) {
   if (!isOpen) return null;
 
   const handleClose = () => {
-    setSelectedColor('#0284C7');
+    setSelectedColor('#000000');
     setHasDrawn(false);
     onClose();
   };

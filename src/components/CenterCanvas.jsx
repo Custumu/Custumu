@@ -894,7 +894,11 @@ export default function CenterCanvas({
       // Circular dashed red eraser target matching 12px contact radius
       return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'%3E%3Ccircle cx='14' cy='14' r='12' fill='rgba(239,68,68,0.18)' stroke='%23ef4444' stroke-width='1.5' stroke-dasharray='3 2'/%3E%3Ccircle cx='14' cy='14' r='1.5' fill='%23ef4444'/%3E%3C/svg%3E") 14 14, crosshair`;
     }
-    // Slightly larger hollow circle with a soft slate-600 border and no fill
+    if (activeTool === 'draw') {
+      // Smaller hollow circle for pen
+      return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4' fill='none' stroke='%23475569' stroke-width='1.5'/%3E%3C/svg%3E") 8 8, auto`;
+    }
+    // Larger hollow circle for highlighter
     return `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='11' fill='none' stroke='%23475569' stroke-width='1.5'/%3E%3C/svg%3E") 16 16, auto`;
   };
 

@@ -12,10 +12,12 @@ export function getAiConfig() {
  */
 export async function streamEnterpriseAiResponse({
   prompt,
+  conversationId,
   conversationHistory = [],
   documentContext,
   documentMetadata,
   onToken,
+  onConversationId,
 }) {
   const config = getAiConfig();
   return await streamViaServerApi(
@@ -24,7 +26,9 @@ export async function streamEnterpriseAiResponse({
     documentContext,
     documentMetadata,
     config,
-    onToken
+    onToken,
+    conversationId,
+    onConversationId
   );
 }
 
@@ -37,7 +41,9 @@ async function streamViaServerApi(
   documentContext,
   documentMetadata,
   config,
-  onToken
+  onToken,
+  conversationId,
+  onConversationId
 ) {
   const headers = {
     'Content-Type': 'application/json',
@@ -64,6 +70,7 @@ async function streamViaServerApi(
     headers,
     body: JSON.stringify({
       prompt,
+      conversationId,
       conversationHistory: conversationHistory.slice(-8).map((m) => ({
         sender: m.sender,
         text: m.text,
@@ -106,6 +113,10 @@ async function streamViaServerApi(
 
       try {
         const payload = JSON.parse(dataStr);
+
+        if (payload.conversation_id && onConversationId) {
+          onConversationId(payload.conversation_id);
+        }
 
         const token = payload.token || payload.choices?.[0]?.delta?.content || '';
         if (token) {

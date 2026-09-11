@@ -1,4 +1,5 @@
 import express from 'express';
+import { supabaseAdmin } from '../services/supabase.js';
 
 const router = express.Router();
 
@@ -194,6 +195,7 @@ const CUSTUMU_AI_TOOLS = [
 router.post('/chat', async (req, res) => {
   const {
     prompt,
+    conversationId,
     conversationHistory = [],
     documentContext,
     documentMetadata,
@@ -216,6 +218,56 @@ router.post('/chat', async (req, res) => {
     res.write(`data: ${JSON.stringify({ error: 'Server OPENAI_API_KEY is not configured.' })}\n\n`);
     res.write('data: [DONE]\n\n');
     return res.end();
+  }
+
+  // Handle Supabase chat persistence for authenticated user
+  const user = req.user;
+  let activeConvId = conversationId || null;
+
+  if (user && supabaseAdmin) {
+    try {
+      if (activeConvId) {
+        const { data: existingConv } = await supabaseAdmin
+          .from('ai_conversations')
+          .select('id')
+          .eq('id', activeConvId)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!existingConv) {
+          activeConvId = null;
+        }
+      }
+
+      if (!activeConvId) {
+        const title = prompt.length > 50 ? prompt.slice(0, 47) + '...' : prompt;
+        const { data: newConv, error: convErr } = await supabaseAdmin
+          .from('ai_conversations')
+          .insert({
+            user_id: user.id,
+            title,
+            model_used: model || 'gpt-4o-mini',
+          })
+          .select('id')
+          .single();
+
+        if (!convErr && newConv) {
+          activeConvId = newConv.id;
+        }
+      }
+
+      if (activeConvId) {
+        res.write(`data: ${JSON.stringify({ conversation_id: activeConvId })}\n\n`);
+
+        await supabaseAdmin.from('ai_messages').insert({
+          conversation_id: activeConvId,
+          sender: 'user',
+          content: prompt,
+        });
+      }
+    } catch (dbErr) {
+      console.warn('[Custumu AI] Failed to initialize Supabase conversation:', dbErr.message);
+    }
   }
 
   const pageCount = documentMetadata?.pageCount || documentContext?.numPages || 1;
@@ -282,6 +334,7 @@ CRITICAL RULES:
     const decoder = new TextDecoder('utf-8');
 
     let buffer = '';
+    let accumulatedAssistantText = '';
     const accumulatedToolCalls = {}; // index -> { id, name, arguments }
 
     while (true) {
@@ -303,6 +356,7 @@ CRITICAL RULES:
           const delta = chunk.choices?.[0]?.delta;
 
           if (delta?.content) {
+            accumulatedAssistantText += delta.content;
             res.write(`data: ${JSON.stringify({ token: delta.content })}\n\n`);
           }
 
@@ -338,6 +392,7 @@ CRITICAL RULES:
           const chunk = JSON.parse(dataStr);
           const delta = chunk.choices?.[0]?.delta;
           if (delta?.content) {
+            accumulatedAssistantText += delta.content;
             res.write(`data: ${JSON.stringify({ token: delta.content })}\n\n`);
           }
           if (delta?.tool_calls) {
@@ -372,6 +427,31 @@ CRITICAL RULES:
       }
     }
 
+    // Save assistant response and tool calls to Supabase
+    if (user && supabaseAdmin && activeConvId) {
+      try {
+        const toolCallsToSave = Object.values(accumulatedToolCalls)
+          .filter((tc) => tc && tc.name)
+          .map((tc) => {
+            let args = {};
+            try {
+              args = JSON.parse(tc.arguments || '{}');
+            } catch (e) {}
+            return { name: tc.name, args };
+          });
+
+        await supabaseAdmin.from('ai_messages').insert({
+          conversation_id: activeConvId,
+          sender: 'assistant',
+          content: accumulatedAssistantText || '(Action performed)',
+          tool_calls: toolCallsToSave.length > 0 ? toolCallsToSave : null,
+        });
+        console.log(`[Custumu AI] Successfully saved message to conversation ${activeConvId}`);
+      } catch (saveErr) {
+        console.warn('[Custumu AI] Failed to save assistant message:', saveErr.message);
+      }
+    }
+
     res.write('data: [DONE]\n\n');
     res.end();
   } catch (err) {
@@ -379,6 +459,69 @@ CRITICAL RULES:
     res.write(`data: ${JSON.stringify({ error: err.message || 'Error processing AI stream' })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
+  }
+});
+
+/**
+ * GET /api/ai/conversations
+ * Retrieve conversation history list for authenticated user
+ */
+router.get('/conversations', async (req, res) => {
+  const user = req.user;
+  if (!user || !supabaseAdmin) {
+    return res.json({ conversations: [] });
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('ai_conversations')
+      .select('id, title, model_used, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (error) throw error;
+    res.json({ conversations: data || [] });
+  } catch (err) {
+    console.error('[Custumu AI] Error fetching conversations:', err.message);
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+/**
+ * GET /api/ai/conversations/:id/messages
+ * Retrieve messages for a specific conversation
+ */
+router.get('/conversations/:id/messages', async (req, res) => {
+  const user = req.user;
+  const convId = req.params.id;
+  if (!user || !supabaseAdmin) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const { data: conv, error: convErr } = await supabaseAdmin
+      .from('ai_conversations')
+      .select('id')
+      .eq('id', convId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (convErr || !conv) {
+      return res.status(404).json({ error: 'Conversation not found' });
+    }
+
+    const { data: messages, error: msgErr } = await supabaseAdmin
+      .from('ai_messages')
+      .select('id, sender, content, tool_calls, created_at')
+      .eq('conversation_id', convId)
+      .order('created_at', { ascending: true });
+
+    if (msgErr) throw msgErr;
+    res.json({ messages: messages || [] });
+  } catch (err) {
+    console.error('[Custumu AI] Error fetching messages:', err.message);
+    res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
 

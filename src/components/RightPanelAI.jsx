@@ -41,6 +41,7 @@ export default function RightPanelAI({
   const [aiConfig, setAiConfig] = useState(getAiConfig());
   const [executedActionIds, setExecutedActionIds] = useState(new Set());
   const [executingActionId, setExecutingActionId] = useState(null);
+  const [conversationId, setConversationId] = useState(null);
   const textareaRef = useRef(null);
 
   useEffect(() => {
@@ -129,12 +130,16 @@ export default function RightPanelAI({
     try {
       const result = await streamEnterpriseAiResponse({
         prompt: query,
+        conversationId,
         conversationHistory: messages,
         documentContext,
         documentMetadata,
         onToken: (token) => {
           accumulatedText += token;
           setStreamedText(accumulatedText);
+        },
+        onConversationId: (id) => {
+          setConversationId(id);
         },
       });
 

@@ -35,7 +35,7 @@
   --brand-hover: #2563eb;
 
   /* Dark mode theme variables - using #101012 */
-  --bg-app: #101012;
+  --bg-app: #131413;
   --bg-surface: #161619;
   --bg-card: #1c1c21;
   --bg-card-subtle: #131316;
@@ -65,7 +65,9 @@
     background-color: var(--bg-app);
     color: var(--text-primary);
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      color 0.2s ease;
   }
 
   /* Custom clean light/dark scrollbar */
@@ -179,11 +181,10 @@
   color: #ffffff;
 }
 
-.dark .fixed.inset-0 input[type="text"],
-.dark .fixed.inset-0 input[type="number"],
+.dark .fixed.inset-0 input[type='text'],
+.dark .fixed.inset-0 input[type='number'],
 .dark .fixed.inset-0 select {
   background-color: #131316;
   border-color: #282834;
   color: #f8fafc;
 }
-

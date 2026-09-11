@@ -321,7 +321,8 @@ export default function CenterCanvas({
               anno.points.length > 0 &&
               !anno.isErased
             ) {
-              const strokeColor = anno.type === 'highlight' ? HIGHLIGHT_COLOR : (anno.color || PEN_COLOR);
+              const strokeColor =
+                anno.type === 'highlight' ? HIGHLIGHT_COLOR : anno.color || PEN_COLOR;
               const sw = (anno.strokeWidth || (anno.type === 'highlight' ? 18 : 3)) * dpr;
               offCtx.strokeStyle = strokeColor;
               offCtx.fillStyle = strokeColor;
@@ -360,8 +361,14 @@ export default function CenterCanvas({
             }
 
             // 3. Fallback to vector points even if isErased was set
-            if (!painted && (anno.type === 'draw' || anno.type === 'highlight') && anno.points && anno.points.length > 0) {
-              const strokeColor = anno.type === 'highlight' ? HIGHLIGHT_COLOR : (anno.color || PEN_COLOR);
+            if (
+              !painted &&
+              (anno.type === 'draw' || anno.type === 'highlight') &&
+              anno.points &&
+              anno.points.length > 0
+            ) {
+              const strokeColor =
+                anno.type === 'highlight' ? HIGHLIGHT_COLOR : anno.color || PEN_COLOR;
               const sw = (anno.strokeWidth || (anno.type === 'highlight' ? 18 : 3)) * dpr;
               offCtx.strokeStyle = strokeColor;
               offCtx.fillStyle = strokeColor;
@@ -892,7 +899,7 @@ export default function CenterCanvas({
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-slate-100/70 dark:bg-[#101012] h-full overflow-hidden relative min-w-0 transition-colors duration-150">
+    <main className="flex-1 flex flex-col bg-slate-100/70 dark:bg-[#181A19] h-full overflow-hidden relative min-w-0 transition-colors duration-150">
       {/* Top Floating Action Toolbar */}
       <CanvasToolbar
         activeTool={activeTool}

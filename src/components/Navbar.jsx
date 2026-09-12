@@ -8,16 +8,7 @@ import {
   Image,
   ChevronDown,
   Check,
-  Sparkles,
-  Info,
-  Merge,
-  Split,
-  Trash2,
-  Copy,
-  ArrowUpDown,
   FileSpreadsheet,
-  LayoutGrid,
-  Layers,
   Sun,
   Moon,
   User,
@@ -27,20 +18,17 @@ import { useDocument } from '../context/DocumentContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import UserMenu from './menus/UserMenu';
+import ToolsMenu from './menus/ToolsMenu';
 
 export default function Navbar(props) {
   const docCtx = useDocument();
-  const { theme, isDark, toggleTheme } = useTheme();
+  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isEditor = location.pathname === '/editor';
   const hasDocument =
     props.hasDocument !== undefined ? props.hasDocument : isEditor && Boolean(docCtx.docBuffer);
-  const documentName = props.documentName ?? docCtx.docName;
-  const pageCount = props.pageCount ?? docCtx.docMeta.pageCount;
-  const isPrivateMode = props.isPrivateMode ?? docCtx.isPrivateMode;
-  const setIsPrivateMode = props.setIsPrivateMode ?? docCtx.setIsPrivateMode;
   const onResetDocument =
     props.onResetDocument ?? (isEditor ? docCtx.handleResetDocument : () => navigate('/'));
   const onExportPdf = props.onExportPdf ?? docCtx.handleExportPdf;
@@ -69,49 +57,26 @@ export default function Navbar(props) {
         'info'
       );
     });
-  const onUndo = props.onUndo ?? docCtx.handleUndo;
-  const onRedo = props.onRedo ?? docCtx.handleRedo;
-  const canUndo = props.canUndo !== undefined ? props.canUndo : docCtx.canUndo;
-  const canRedo = props.canRedo !== undefined ? props.canRedo : docCtx.canRedo;
-  const [showToolsMenu, setShowToolsMenu] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
-  const toolsMenuRef = useRef(null);
-  const toolsTimeoutRef = useRef(null);
   const exportMenuRef = useRef(null);
   const { user, openAuthModal } = useAuth();
 
-  const handleToolsMouseEnter = () => {
-    if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
-    setShowToolsMenu(true);
-  };
-
-  const handleToolsMouseLeave = () => {
-    toolsTimeoutRef.current = setTimeout(() => {
-      setShowToolsMenu(false);
-    }, 180);
-  };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (toolsMenuRef.current && !toolsMenuRef.current.contains(event.target)) {
-        setShowToolsMenu(false);
-      }
       if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
         setShowExportMenu(false);
       }
     };
-    if (showToolsMenu || showExportMenu) {
+    if (showExportMenu) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      if (toolsTimeoutRef.current) clearTimeout(toolsTimeoutRef.current);
     };
-  }, [showToolsMenu, showExportMenu]);
+  }, [showExportMenu]);
 
   const handleDownloadPdf = () => {
-    setShowToolsMenu(false);
     setShowExportMenu(false);
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.1 } });
     onExportPdf && onExportPdf();
@@ -135,285 +100,18 @@ export default function Navbar(props) {
             </div>
           </div>
 
-          {/* Multi-Column Tools & Conversion Navigation Menu */}
-          <div
-            className="relative py-1.5"
-            ref={toolsMenuRef}
-            onMouseEnter={handleToolsMouseEnter}
-            onMouseLeave={handleToolsMouseLeave}
-          >
-            <button
-              onClick={() => {
-                setShowToolsMenu(!showToolsMenu);
-                setShowExportMenu(false);
-              }}
-              className={`flex items-center space-x-1 font-medium text-xs sm:text-sm px-3 py-1.5 rounded-lg transition cursor-pointer ${
-                showToolsMenu
-                  ? 'text-[#205ae3] bg-blue-50/80 dark:bg-blue-950/40 dark:text-blue-400'
-                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-[#25252c]'
-              }`}
-            >
-              <span>Tools</span>
-              <ChevronDown
-                className={`w-3.5 h-3.5 opacity-70 transition-transform duration-200 ${showToolsMenu ? 'rotate-180 text-[#205ae3] dark:text-blue-400' : ''}`}
-              />
-            </button>
-
-            {/* Privacy Switcher Badge */}
-            {/* <div className="flex items-center bg-white border border-slate-200 rounded-full p-0.5">
-            <button
-              onClick={() => setIsPrivateMode(true)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
-                isPrivateMode
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-700'
-              }`}
-              title="Private Mode: Zero uploads, 100% in-browser WebAssembly"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Private WASM</span>
-            </button>
-            <button
-              onClick={() => setIsPrivateMode(false)}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-medium transition ${
-                !isPrivateMode
-                  ? 'bg-brand-500/20 text-brand-400 border border-brand-500/30 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-700'
-              }`}
-              title="Cloud Mode: High-capacity AI & heavy worker conversions"
-            >
-              <Cloud className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cloud Enclave</span>
-            </button>
-            <button
-              onClick={() => setShowPrivacyModal(true)}
-              className="p-1 text-slate-500 hover:text-slate-700 transition"
-              title="Privacy Information"
-            >
-              <Info className="w-3.5 h-3.5" />
-            </button>
-          </div> */}
-
-            {showToolsMenu && (
-              <div className="absolute left-0 top-full pt-1 w-[540px] max-w-[95vw] z-50 animate-fade-in">
-                <div className="bg-white dark:bg-[#161619] border border-slate-200 dark:border-[#27272e] rounded-2xl shadow-2xl overflow-hidden text-slate-800 dark:text-slate-200">
-                  <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-[#27272e]">
-                    {/* Column 1: Native Functionality */}
-                    <div className="p-3 space-y-1 dark:bg-[#161619]">
-                      <div className="px-3 py-1.5 mb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-brand-500" />
-                        <span>Organize & Edit</span>
-                      </div>
-
-                      {/* Merge PDF */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          onOpenMergeModal && onOpenMergeModal();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition shrink-0 mt-0.5">
-                          <Merge className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-indigo-600 transition">
-                            Merge PDF
-                          </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
-                            Combine multiple files into one
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* Split PDF */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onOpenSplitModal && onOpenSplitModal();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-cyan-50 text-cyan-600 group-hover:bg-cyan-100 transition shrink-0 mt-0.5">
-                          <Split className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-cyan-600 transition">
-                            Split PDF
-                          </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
-                            Separate into individual files
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* Remove pages */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onDeletePage && onDeletePage();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-100 transition shrink-0 mt-0.5">
-                          <Trash2 className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-rose-600 transition">
-                            Remove pages
-                          </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
-                            Delete unwanted pages
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* Extract pages */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onExtractPages && onExtractPages();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-amber-50 text-amber-600 group-hover:bg-amber-100 transition shrink-0 mt-0.5">
-                          <Copy className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-amber-600 transition">
-                            Extract pages
-                          </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
-                            Save page ranges as new PDF
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* Organize PDF */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onOrganizePages && onOrganizePages();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-violet-50 text-violet-600 group-hover:bg-violet-100 transition shrink-0 mt-0.5">
-                          <ArrowUpDown className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 group-hover:text-violet-600 transition">
-                            Organize PDF
-                          </div>
-                          <div className="text-[11px] text-slate-500 leading-tight">
-                            Reorder, rotate & sort pages
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Column 2: Convert from PDF */}
-                    <div className="p-3 space-y-1 bg-slate-50/40 dark:bg-[#131316]/50">
-                      <div className="px-3 py-1.5 mb-1 text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
-                        <span>Convert from PDF</span>
-                      </div>
-
-                      {/* PDF to PNG */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onOpenPngModal && onOpenPngModal();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-[#202026] hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-cyan-50 text-cyan-600 group-hover:bg-cyan-100 transition shrink-0 mt-0.5">
-                          <Image className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-cyan-600 transition">
-                            PDF to PNG
-                          </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                            High-res images (.png)
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* PDF to Word */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onExportWord && onExportWord();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-[#202026] hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-blue-50 text-blue-600 group-hover:bg-blue-100 transition shrink-0 mt-0.5">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition">
-                            PDF to Word
-                          </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                            Editable Word document (.doc)
-                          </div>
-                        </div>
-                      </button>
-
-                      {/* PDF to Excel */}
-                      <button
-                        onClick={() => {
-                          setShowToolsMenu(false);
-                          if (!hasDocument) {
-                            alert('Please open or upload a PDF document first.');
-                            return;
-                          }
-                          onExportExcel && onExportExcel();
-                        }}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-white dark:hover:bg-[#202026] hover:shadow-xs flex items-start space-x-2.5 transition group cursor-pointer"
-                      >
-                        <div className="p-2 rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition shrink-0 mt-0.5">
-                          <FileSpreadsheet className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold text-xs text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition">
-                            PDF to Excel
-                          </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                            Extract tables to spreadsheet (.xlsx)
-                          </div>
-                        </div>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Everyday PDF Tools Dropdown Menu */}
+          <ToolsMenu
+            hasDocument={hasDocument}
+            onOpenMergeModal={onOpenMergeModal}
+            onOpenSplitModal={onOpenSplitModal}
+            onDeletePage={onDeletePage}
+            onExtractPages={onExtractPages}
+            onOrganizePages={onOrganizePages}
+            onExportWord={onExportWord}
+            onExportExcel={onExportExcel}
+            onOpenPngModal={onOpenPngModal}
+          />
         </div>
 
         {/* Right: Theme Toggle & Export */}
@@ -438,7 +136,6 @@ export default function Navbar(props) {
               <button
                 onClick={() => {
                   setShowExportMenu(!showExportMenu);
-                  setShowToolsMenu(false);
                 }}
                 className="flex items-center space-x-2 bg-[#205ae3] border border-[#205ae3] text-white font-medium text-xs sm:text-sm px-3.5 sm:px-4 py-1.5 rounded-lg hover:bg-[#184cc8] transition cursor-pointer shadow-sm"
               >

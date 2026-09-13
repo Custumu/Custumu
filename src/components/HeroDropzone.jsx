@@ -1,17 +1,20 @@
 import React, { useRef, useState } from 'react';
 import {
   UploadCloud,
-  FileText,
   Sparkles,
-  Wand2,
-  Shield,
-  Zap,
   FileSpreadsheet,
   Scissors,
   Minimize2,
 } from 'lucide-react';
 
-export default function HeroDropzone({ onFileLoaded }) {
+export default function HeroDropzone({
+  onFileLoaded,
+  title,
+  description,
+  badge,
+  actionPrompt = '',
+  icon: IconComponent,
+}) {
   const fileInputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingPrompt, setPendingPrompt] = useState('');
@@ -30,14 +33,14 @@ export default function HeroDropzone({ onFileLoaded }) {
     setIsDragging(false);
     const files = e.dataTransfer.files;
     if (files && files[0]) {
-      processFile(files[0], pendingPrompt);
+      processFile(files[0], pendingPrompt || actionPrompt);
     }
   };
 
   const handleFileChange = (e) => {
     const files = e.target.files;
     if (files && files[0]) {
-      processFile(files[0], pendingPrompt);
+      processFile(files[0], pendingPrompt || actionPrompt);
     }
   };
 
@@ -47,25 +50,37 @@ export default function HeroDropzone({ onFileLoaded }) {
       return;
     }
     const buffer = await file.arrayBuffer();
-    onFileLoaded(buffer, file.name, promptToPass);
+    onFileLoaded(buffer, file.name, promptToPass || actionPrompt);
   };
 
-  const handleQuickActionClick = (actionPrompt) => {
-    setPendingPrompt(actionPrompt);
+  const handleQuickActionClick = (actionText) => {
+    setPendingPrompt(actionText);
     fileInputRef.current?.click();
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12 sm:py-16 text-center animate-fade-in">
+    <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14 text-center animate-fade-in">
+      {badge && (
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-[#205ae3] dark:bg-blue-950/60 dark:text-blue-400 border border-blue-200 dark:border-blue-900/60 mb-3 uppercase tracking-wider">
+          {badge}
+        </div>
+      )}
+
       {/* Main Headline */}
       <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold tracking-tight text-slate-900 dark:text-white mb-4 leading-tight">
-        Your AI Workspace for <br className="hidden sm:inline" />
-        <span>Documents & PDFs</span>
+        {title ? (
+          title
+        ) : (
+          <>
+            Your AI Workspace for <br className="hidden sm:inline" />
+            <span>Documents & PDFs</span>
+          </>
+        )}
       </h1>
 
       <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
-        Drop your document, tell us what you need, and Custumu handles it. Edit, convert, compress,
-        extract tables, and chat with your files — in one unified workspace.
+        {description ||
+          'Drop your document, tell us what you need, and Custumu handles it. Edit, convert, compress, extract tables, and chat with your files — in one unified workspace.'}
       </p>
 
       {/* Hero Dropzone Card */}
@@ -90,7 +105,11 @@ export default function HeroDropzone({ onFileLoaded }) {
 
         <div className="flex flex-col items-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-brand-500/20 to-cyan-500/20 border border-brand-500/30 flex items-center justify-center text-brand-400 mb-4 group-hover:scale-110 transition duration-300 shadow-lg shadow-brand-500/10">
-            <UploadCloud className="w-8 h-8" />
+            {IconComponent ? (
+              <IconComponent className="w-8 h-8 text-[#205ae3] dark:text-blue-400" />
+            ) : (
+              <UploadCloud className="w-8 h-8" />
+            )}
           </div>
 
           <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-1">
@@ -104,7 +123,7 @@ export default function HeroDropzone({ onFileLoaded }) {
           {/* Quick Action Badges */}
           <div className="w-full max-w-lg pt-4 border-t border-slate-200/80 dark:border-[#282834]">
             <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-3">
-              Choose your PDF to:
+              {title ? `Ready to use ${title}:` : 'Choose your PDF to:'}
             </div>
             <div
               className="grid grid-cols-2 sm:grid-cols-4 gap-2"

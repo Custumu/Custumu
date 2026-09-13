@@ -6,8 +6,11 @@ import Navbar from './components/Navbar';
 import Toast from './components/Toast';
 import { Toaster } from '@/components/ui/sonner';
 import AuthModal from './components/modals/AuthModal';
+import ModalsContainer from './components/modals/ModalsContainer';
 import LandingPage from './pages/LandingPage';
 import EditorPage from './pages/EditorPage';
+import ToolLandingPage from './pages/ToolLandingPage';
+import { ALL_TOOLS } from './lib/pdfTools';
 
 function AppContent() {
   const location = useLocation();
@@ -21,10 +24,18 @@ function AppContent() {
       <Toaster position="top-right" richColors />
       <Navbar />
       <AuthModal />
+      <ModalsContainer />
 
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/editor" element={<EditorPage />} />
+        {ALL_TOOLS.map((tool) => (
+          <Route
+            key={tool.path}
+            path={tool.path}
+            element={<ToolLandingPage tool={tool} />}
+          />
+        ))}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
